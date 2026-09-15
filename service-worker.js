@@ -1,9 +1,11 @@
-const CACHE_NAME = "hufbuch-cache-v1";
+const CACHE_NAME = "hufbuch-cache-v2";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./manifest.json",
-  "./icons/icon.svg"
+  "./icons/icon.svg",
+  "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
+  "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.2/jszip.min.js"
 ];
 
 self.addEventListener("install", (event) => {

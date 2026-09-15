@@ -146,7 +146,7 @@ tr:last-child td{border-bottom:none;}
 .stat .value.moss{color:var(--moss-dark);}
 
 .divider{border:none; border-top:1px solid var(--line); margin:20px 0;}
-.item-row{display:grid; grid-template-columns:1.4fr 1.4fr 0.9fr auto; gap:10px; align-items:end; margin-bottom:10px;}
+.item-row{display:grid; grid-template-columns:1.3fr 1.3fr 0.7fr 0.55fr auto; gap:10px; align-items:end; margin-bottom:10px;}
 @media (max-width:720px){.item-row{grid-template-columns:1fr; }}
 .item-row .del{align-self:center;}
 .section-title{font-size:13px; font-weight:600; color:var(--ink-soft); margin:18px 0 8px; text-transform:none;}
@@ -168,17 +168,36 @@ tr:last-child td{border-bottom:none;}
 @media print{
   body *{visibility:hidden;}
   #print-area, #print-area *{visibility:visible;}
-  #print-area{display:block; position:absolute; top:0; left:0; width:100%; padding:30px; color:#111; background:#fff;}
-  .inv-head{display:flex; justify-content:space-between; margin-bottom:34px;}
-  .inv-from{font-size:12px; color:#444; white-space:pre-line;}
-  .inv-to{font-size:13px; white-space:pre-line;}
-  .inv-meta{margin:18px 0 26px; font-size:13px;}
-  .inv-meta div{margin-bottom:3px;}
-  table.pinv{width:100%; border-collapse:collapse; font-size:13px;}
-  table.pinv th{border-bottom:1.5px solid #333; text-align:left; padding:6px 4px; font-size:11.5px; text-transform:uppercase; letter-spacing:.03em;}
-  table.pinv td{padding:8px 4px; border-bottom:1px solid #ddd;}
-  .pinv-total{margin-top:10px; text-align:right; font-size:15px; font-weight:700;}
-  .pinv-note{margin-top:34px; font-size:11.5px; color:#555; white-space:pre-line;}
+  #print-area{
+    display:block; position:absolute; top:0; left:0; width:100%;
+    padding:50px 60px; color:#111; background:#fff;
+    font-family: Georgia, 'Times New Roman', serif;
+  }
+  .pinv-logo-wrap{text-align:center; margin-bottom:8px;}
+  .pinv-logo-wrap img{max-height:110px; max-width:220px;}
+  .pinv-firmname{text-align:center; font-size:14px; letter-spacing:0.22em; text-transform:uppercase; margin-top:10px; font-family: Georgia, serif;}
+  .pinv-inhaber{text-align:center; font-size:13px; font-style:italic; margin-top:2px; color:#333;}
+
+  .inv-head{display:flex; justify-content:space-between; align-items:flex-start; margin:46px 0 40px;}
+  .inv-to{font-size:12.5px; line-height:1.6;}
+  .inv-to .lbl{font-weight:700; letter-spacing:0.08em; font-size:11px; margin-bottom:6px;}
+  .inv-nr{text-align:right; font-size:12.5px; line-height:1.6;}
+
+  table.pinv{width:100%; border-collapse:collapse; font-size:12.5px; margin-top:6px;}
+  table.pinv th{border-bottom:1.3px solid #222; text-align:left; padding:0 4px 8px; font-size:11px; letter-spacing:0.06em; text-transform:uppercase; font-weight:700;}
+  table.pinv th.num, table.pinv td.num{text-align:right;}
+  table.pinv td{padding:10px 4px; border-bottom:1px solid #ddd; vertical-align:top; line-height:1.5;}
+  table.pinv td .sub{color:#666; font-size:11.5px; display:block;}
+
+  .pinv-total-row{display:flex; justify-content:flex-end; margin-top:14px; border-top:1.3px solid #222; padding-top:10px;}
+  .pinv-total-row .tl{font-weight:700; letter-spacing:0.08em; font-size:11.5px; margin-right:26px;}
+  .pinv-total-row .tv{font-weight:700; font-size:14px;}
+
+  .pinv-note{margin-top:40px; font-size:11px; color:#444; white-space:pre-line; line-height:1.5;}
+
+  .pinv-pay{display:flex; justify-content:space-between; margin-top:26px; font-size:11.5px; line-height:1.7;}
+  .pinv-pay .lbl{font-weight:700; letter-spacing:0.06em; font-size:10.5px; margin-bottom:4px;}
+  .pinv-pay .right{text-align:right;}
 }
 </style>
 </head>
@@ -323,14 +342,30 @@ tr:last-child td{border-bottom:none;}
           <div class="field"><label>Betrag (€)</label><input id="aBetrag" type="number" min="0" step="0.01"></div>
         </div>
         <div class="field" style="margin-top:12px;"><label>Beschreibung</label><input id="aBeschreibung" placeholder="z. B. Hufeisen &amp; Nägel, Firma XY"></div>
+        <div class="field" style="margin-top:12px;">
+          <label>Beleg(e) anhängen (Foto oder PDF)</label>
+          <input type="file" id="aBelege" accept="image/*,application/pdf" multiple>
+        </div>
         <button class="btn" style="margin-top:16px;" id="saveExpenseBtn">Ausgabe speichern</button>
       </div>
 
       <div class="panel">
         <h2>Alle Ausgaben</h2>
-        <table><thead><tr><th>Datum</th><th>Kategorie</th><th>Beschreibung</th><th class="right">Betrag</th><th></th></tr></thead><tbody id="expTable"></tbody></table>
+        <table><thead><tr><th>Datum</th><th>Kategorie</th><th>Beschreibung</th><th class="right">Betrag</th><th>Belege</th><th></th></tr></thead><tbody id="expTable"></tbody></table>
       </div>
     </section>
+
+    <div id="receiptModalOverlay" class="hidden" style="position:fixed; inset:0; background:rgba(20,15,8,0.55); z-index:60; display:flex; align-items:center; justify-content:center; padding:20px;">
+      <div style="background:var(--card); border:1px solid var(--line); border-radius:10px; max-width:480px; width:100%; max-height:80vh; overflow-y:auto; padding:24px;">
+        <h2 style="margin-bottom:14px;">Belege</h2>
+        <div id="receiptModalList"></div>
+        <div class="field" style="margin-top:16px;">
+          <label>Weiteren Beleg hinzufügen</label>
+          <input type="file" id="receiptModalUpload" accept="image/*,application/pdf" multiple>
+        </div>
+        <button class="btn secondary" style="margin-top:16px;" id="receiptModalClose" type="button">Schließen</button>
+      </div>
+    </div>
 
     <!-- STEUER EXPORT -->
     <section class="tab-page hidden" id="tab-steuer">
@@ -358,6 +393,13 @@ tr:last-child td{border-bottom:none;}
           <strong>Detail-Journal:</strong> jede Rechnung und Ausgabe einzeln, z. B. für den Steuerberater.
         </div>
       </div>
+
+      <div class="panel">
+        <h2>Belege sammeln</h2>
+        <div class="hint">Alle Fotos/PDFs, die du bei deinen Ausgaben angehängt hast, gesammelt als ZIP-Datei — z. B. für den Steuerberater oder falls das Finanzamt Nachweise sehen möchte. Enthält zusätzlich das Detail-Journal als CSV.</div>
+        <button class="btn secondary" id="exportReceiptsZip" type="button">Alle Belege des Jahres herunterladen (.zip)</button>
+        <div class="hint" id="receiptZipStatus" style="margin-top:10px;"></div>
+      </div>
     </section>
 
     <!-- EINSTELLUNGEN -->
@@ -365,18 +407,31 @@ tr:last-child td{border-bottom:none;}
       <div class="panel">
         <h2>Firmendaten &amp; Rechnungskopf</h2>
         <div class="grid grid-2">
-          <div class="field"><label>Name / Firma</label><input id="sFirma"></div>
-          <div class="field"><label>Inhaber</label><input id="sInhaber"></div>
+          <div class="field"><label>Name / Firma (Kopfzeile Rechnung, z. B. "HUFBEARBEITUNG")</label><input id="sFirma"></div>
+          <div class="field"><label>Inhaber (erscheint kursiv darunter)</label><input id="sInhaber"></div>
           <div class="field"><label>Straße &amp; Hausnummer</label><input id="sStrasse"></div>
           <div class="field"><label>PLZ &amp; Ort</label><input id="sOrt"></div>
           <div class="field"><label>Telefon</label><input id="sTelefon"></div>
           <div class="field"><label>E-Mail</label><input id="sEmail"></div>
+          <div class="field"><label>Empfänger (Kontoinhaber)</label><input id="sEmpfaenger"></div>
           <div class="field"><label>IBAN</label><input id="sIban"></div>
-          <div class="field"><label>Steuernummer</label><input id="sSteuernr"></div>
+          <div class="field"><label>BIC</label><input id="sBic"></div>
+          <div class="field"><label>Bank</label><input id="sBank"></div>
+          <div class="field"><label>Steuernummer (optional)</label><input id="sSteuernr"></div>
         </div>
-        <div class="hint" style="margin-top:10px;">Als Kleinunternehmer (§19 UStG) wird auf jeder Rechnung automatisch der gesetzliche Hinweis ergänzt — keine Umsatzsteuer wird ausgewiesen.</div>
+        <div class="section-title">Logo</div>
+        <div class="hint">Erscheint zentriert oben auf jeder gedruckten Rechnung.</div>
+        <div style="display:flex; align-items:center; gap:14px;">
+          <img id="sLogoPreview" style="max-height:70px; max-width:140px; display:none; border:1px solid var(--line); border-radius:6px; padding:4px; background:#fff;">
+          <label class="btn secondary small" style="cursor:pointer;">Logo hochladen
+            <input type="file" id="sLogoFile" accept="image/*" class="hidden">
+          </label>
+          <button class="btn ghost small" id="sLogoRemove" type="button">Entfernen</button>
+        </div>
+        <div class="hint" style="margin-top:16px;">Als Kleinunternehmer (§19 UStG) wird auf jeder Rechnung automatisch der gesetzliche Hinweis ergänzt — keine Umsatzsteuer wird ausgewiesen.</div>
         <button class="btn" style="margin-top:16px;" id="saveSettingsBtn">Speichern</button>
       </div>
+
 
       <div class="panel">
         <h2>Kilometergeld-Satz</h2>
@@ -408,19 +463,40 @@ tr:last-child td{border-bottom:none;}
 </div>
 
 <div id="print-area">
+  <div class="pinv-logo-wrap" id="pLogoWrap"></div>
+  <div class="pinv-firmname" id="pFirmname"></div>
+  <div class="pinv-inhaber" id="pInhaber"></div>
+
   <div class="inv-head">
-    <div class="inv-from" id="pFrom"></div>
-    <div class="inv-to" id="pTo"></div>
+    <div class="inv-to">
+      <div class="lbl">RECHNUNG AN:</div>
+      <div id="pTo"></div>
+    </div>
+    <div class="inv-nr" id="pMeta"></div>
   </div>
-  <h2 style="font-family:Georgia,serif;">Rechnung</h2>
-  <div class="inv-meta" id="pMeta"></div>
-  <table class="pinv"><thead><tr><th>Pferd</th><th>Leistung</th><th style="text-align:right;">Betrag</th></tr></thead><tbody id="pItems"></tbody></table>
-  <div class="pinv-total" id="pTotal"></div>
-  <div class="inv-note" id="pNote"></div>
+
+  <table class="pinv">
+    <thead><tr><th>Beschreibung</th><th class="num">Preis</th><th class="num">Anzahl</th><th class="num">Summe</th></tr></thead>
+    <tbody id="pItems"></tbody>
+  </table>
+  <div class="pinv-total-row"><span class="tl">TOTAL</span><span class="tv" id="pTotal"></span></div>
+
+  <div class="pinv-note" id="pNote"></div>
+
+  <div class="pinv-pay">
+    <div>
+      <div class="lbl">ZAHLUNGSINFORMATIONEN</div>
+      <div id="pPayLeft"></div>
+    </div>
+    <div class="right" id="pPayRight"></div>
+  </div>
 </div>
+
 
 <div class="toast" id="toast"></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.2/jszip.min.js"></script>
 <script>
 (function(){
   "use strict";
@@ -431,7 +507,8 @@ tr:last-child td{border-bottom:none;}
   function defaultData(){
     return {
       settings:{
-        firma:"", inhaber:"", strasse:"", ort:"", telefon:"", email:"", iban:"", steuernr:"",
+        firma:"", inhaber:"", strasse:"", ort:"", telefon:"", email:"", empfaenger:"", iban:"", bic:"", bank:"", steuernr:"",
+        logoDataUrl:"",
         kmRate:0.30,
         invoiceYear: new Date().getFullYear(),
         nextSeq: 1,
@@ -471,6 +548,68 @@ tr:last-child td{border-bottom:none;}
   }
 
   function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+  // ---------- Belege (IndexedDB) ----------
+  var RDB_NAME = 'hufbuch_receipts_db', RDB_STORE = 'receipts', rdbPromise = null;
+  function openReceiptsDB(){
+    if(rdbPromise) return rdbPromise;
+    rdbPromise = new Promise(function(resolve, reject){
+      if(!window.indexedDB){ reject(new Error('IndexedDB nicht verfügbar')); return; }
+      var req = indexedDB.open(RDB_NAME, 1);
+      req.onupgradeneeded = function(e){
+        var db = e.target.result;
+        if(!db.objectStoreNames.contains(RDB_STORE)){
+          var store = db.createObjectStore(RDB_STORE, {keyPath:'id'});
+          store.createIndex('expenseId','expenseId',{unique:false});
+        }
+      };
+      req.onsuccess = function(e){ resolve(e.target.result); };
+      req.onerror = function(e){ reject(e.target.error); };
+    });
+    return rdbPromise;
+  }
+  async function saveReceiptFile(expenseId, file){
+    var db = await openReceiptsDB();
+    var rec = {id:uid(), expenseId:expenseId, filename:file.name, type:file.type, blob:file, size:file.size, addedAt:new Date().toISOString()};
+    return new Promise(function(resolve, reject){
+      var tx = db.transaction(RDB_STORE,'readwrite');
+      tx.objectStore(RDB_STORE).add(rec);
+      tx.oncomplete = function(){ resolve(rec); };
+      tx.onerror = function(){ reject(tx.error); };
+    });
+  }
+  async function getReceiptsForExpense(expenseId){
+    var db = await openReceiptsDB();
+    return new Promise(function(resolve, reject){
+      var tx = db.transaction(RDB_STORE,'readonly');
+      var req = tx.objectStore(RDB_STORE).index('expenseId').getAll(expenseId);
+      req.onsuccess = function(){ resolve(req.result); };
+      req.onerror = function(){ reject(req.error); };
+    });
+  }
+  async function getAllReceipts(){
+    var db = await openReceiptsDB();
+    return new Promise(function(resolve, reject){
+      var tx = db.transaction(RDB_STORE,'readonly');
+      var req = tx.objectStore(RDB_STORE).getAll();
+      req.onsuccess = function(){ resolve(req.result); };
+      req.onerror = function(){ reject(req.error); };
+    });
+  }
+  async function deleteReceiptById(id){
+    var db = await openReceiptsDB();
+    return new Promise(function(resolve, reject){
+      var tx = db.transaction(RDB_STORE,'readwrite');
+      tx.objectStore(RDB_STORE).delete(id);
+      tx.oncomplete = function(){ resolve(); };
+      tx.onerror = function(){ reject(tx.error); };
+    });
+  }
+  function fmtBytes(n){
+    if(n<1024) return n+' B';
+    if(n<1024*1024) return (n/1024).toFixed(0)+' KB';
+    return (n/1024/1024).toFixed(1)+' MB';
+  }
 
   function fmtEUR(n){
     n = Number(n)||0;
@@ -663,7 +802,7 @@ tr:last-child td{border-bottom:none;}
   // ================= RECHNUNG NEU =================
   var invItems = [];
   function resetInvoiceForm(){
-    invItems = [{horse:'', leistung:'', betrag:''}];
+    invItems = [{horse:'', leistung:'', preis:'', menge:1}];
   }
   resetInvoiceForm();
 
@@ -726,7 +865,8 @@ tr:last-child td{border-bottom:none;}
       return '<div class="item-row" data-idx="'+idx+'">'+
         '<div class="field"><label>Pferd</label><select class="it-horse">'+horseOpts.replace('value="'+it.horse+'"','value="'+it.horse+'" selected')+'</select></div>'+
         '<div class="field"><label>Leistung</label><select class="it-service">'+serviceOptions(it.leistung)+'</select></div>'+
-        '<div class="field"><label>Betrag (€)</label><input class="it-betrag" type="number" min="0" step="0.5" value="'+it.betrag+'"></div>'+
+        '<div class="field"><label>Preis (€)</label><input class="it-preis" type="number" min="0" step="0.5" value="'+it.preis+'"></div>'+
+        '<div class="field"><label>Anzahl</label><input class="it-menge" type="number" min="1" step="1" value="'+(it.menge||1)+'"></div>'+
         '<button class="btn ghost del" type="button" title="Position entfernen">✕</button>'+
         '</div>';
     }).join('');
@@ -748,12 +888,15 @@ tr:last-child td{border-bottom:none;}
           invItems[idx].leistung = this.value;
           var opt = this.selectedOptions[0];
           var price = opt.getAttribute('data-price');
-          if(price){ invItems[idx].betrag = price; renderItemRows(); }
+          if(price){ invItems[idx].preis = price; renderItemRows(); }
         }
         updateInvoiceTotals();
       });
-      row.querySelector('.it-betrag').addEventListener('input', function(){
-        invItems[idx].betrag = this.value; updateInvoiceTotals();
+      row.querySelector('.it-preis').addEventListener('input', function(){
+        invItems[idx].preis = this.value; updateInvoiceTotals();
+      });
+      row.querySelector('.it-menge').addEventListener('input', function(){
+        invItems[idx].menge = this.value; updateInvoiceTotals();
       });
       row.querySelector('.del').addEventListener('click', function(){
         if(invItems.length===1) return;
@@ -763,12 +906,13 @@ tr:last-child td{border-bottom:none;}
   }
 
   document.getElementById('addItemBtn').addEventListener('click', function(){
-    invItems.push({horse:'', leistung:'', betrag:''});
+    invItems.push({horse:'', leistung:'', preis:'', menge:1});
     renderItemRows();
   });
 
+
   function updateInvoiceTotals(){
-    var itemsSum = invItems.reduce(function(s,it){ return s + (Number(it.betrag)||0); },0);
+    var itemsSum = invItems.reduce(function(s,it){ return s + (Number(it.preis)||0) * (Number(it.menge)||1); },0);
     var km = Number(document.getElementById('rKm').value)||0;
     var rate = Number(document.getElementById('rKmRate').value)||0;
     var kmBetrag = km*rate;
@@ -781,9 +925,13 @@ tr:last-child td{border-bottom:none;}
   document.getElementById('saveInvoiceBtn').addEventListener('click', function(){
     var custId = document.getElementById('rKunde').value;
     if(!custId){ showToast('Bitte einen Kunden wählen.'); return; }
-    var cleanItems = invItems.filter(function(it){ return it.leistung && Number(it.betrag)>0; })
-      .map(function(it){ return {horse:it.horse||'—', leistung:it.leistung, betrag:Number(it.betrag)}; });
-    if(cleanItems.length===0){ showToast('Bitte mindestens eine Leistung mit Betrag angeben.'); return; }
+    var cleanItems = invItems.filter(function(it){ return it.leistung && Number(it.preis)>0; })
+      .map(function(it){
+        var preis = Number(it.preis);
+        var menge = Number(it.menge)||1;
+        return {horse:it.horse||'—', leistung:it.leistung, preis:preis, menge:menge, betrag: Math.round(preis*menge*100)/100};
+      });
+    if(cleanItems.length===0){ showToast('Bitte mindestens eine Leistung mit Preis angeben.'); return; }
 
     var km = Number(document.getElementById('rKm').value)||0;
     var kmRate = Number(document.getElementById('rKmRate').value)||0;
@@ -823,12 +971,16 @@ tr:last-child td{border-bottom:none;}
         '<td><span class="badge '+(i.status==='bezahlt'?'paid':'open')+'">'+(i.status==='bezahlt'?'Bezahlt':'Offen')+'</span></td>'+
         '<td class="right num">'+fmtEUR(invoiceTotal(i))+'</td>'+
         '<td style="white-space:nowrap;">'+
-          '<button class="btn ghost" data-print="'+i.id+'" type="button">Drucken/PDF</button>'+
+          '<button class="btn ghost" data-pdf="'+i.id+'" type="button">PDF herunterladen</button>'+
+          '<button class="btn ghost" data-print="'+i.id+'" type="button">Drucken</button>'+
           '<button class="btn ghost" data-toggle="'+i.id+'" type="button">'+(i.status==='bezahlt'?'Als offen markieren':'Als bezahlt markieren')+'</button>'+
           '<button class="btn ghost" data-del="'+i.id+'" type="button">Löschen</button>'+
         '</td></tr>';
     }).join('');
 
+    tbody.querySelectorAll('[data-pdf]').forEach(function(b){
+      b.addEventListener('click', function(){ downloadInvoicePdf(b.dataset.pdf); });
+    });
     tbody.querySelectorAll('[data-print]').forEach(function(b){
       b.addEventListener('click', function(){ printInvoice(b.dataset.print); });
     });
@@ -854,61 +1006,317 @@ tr:last-child td{border-bottom:none;}
     if(!inv) return;
     var cust = data.customers.find(function(c){return c.id===inv.customerId;});
     var s = data.settings;
-    document.getElementById('pFrom').textContent =
-      (s.firma||s.inhaber||'') + "\n" + (s.inhaber&&s.firma?s.inhaber+"\n":"") + (s.strasse||'') + "\n" + (s.ort||'') +
-      (s.telefon? "\nTel. "+s.telefon:"") + (s.email? "\n"+s.email:"") + (s.iban? "\nIBAN "+s.iban:"");
-    document.getElementById('pTo').textContent = cust ? (cust.name+"\n"+(cust.strasse||'')+"\n"+(cust.plz||'')+" "+(cust.ort||'')) : '';
+
+    var logoWrap = document.getElementById('pLogoWrap');
+    logoWrap.innerHTML = s.logoDataUrl ? '<img src="'+s.logoDataUrl+'" alt="Logo">' : '';
+    document.getElementById('pFirmname').textContent = s.firma || '';
+    document.getElementById('pInhaber').textContent = s.inhaber || '';
+
+    document.getElementById('pTo').innerHTML = cust ?
+      (cust.name+"<br>"+(cust.strasse||'')+"<br>"+(cust.plz||'')+" "+(cust.ort||'')) : '';
+
     document.getElementById('pMeta').innerHTML =
-      '<div><strong>Rechnungsnummer:</strong> '+inv.number+'</div>'+
-      '<div><strong>Rechnungsdatum:</strong> '+fmtDateDE(inv.date)+'</div>'+
-      (s.steuernr? '<div><strong>Steuernummer:</strong> '+s.steuernr+'</div>':'');
-    document.getElementById('pItems').innerHTML = inv.items.map(function(it){
-      return '<tr><td>'+it.horse+'</td><td>'+it.leistung+'</td><td style="text-align:right;">'+fmtEUR(it.betrag)+'</td></tr>';
-    }).join('') + (inv.anfahrt && inv.anfahrt.active ? '<tr><td>—</td><td>Anfahrtspauschale</td><td style="text-align:right;">'+fmtEUR(inv.anfahrt.betrag)+'</td></tr>' : '');
-    document.getElementById('pTotal').textContent = 'Gesamtbetrag: '+fmtEUR(invoiceTotal(inv));
+      'Rechnung Nr. '+inv.number+'<br>'+fmtDateDE(inv.date) +
+      (s.steuernr? '<br>USt-IdNr./Steuernr.: '+s.steuernr:'');
+
+    var rows = inv.items.map(function(it){
+      var desc = it.horse && it.horse!=='—' ? it.leistung+'<span class="sub">'+it.horse+'</span>' : it.leistung;
+      return '<tr><td>'+desc+'</td><td class="num">'+fmtEUR(it.preis)+'</td><td class="num">'+it.menge+'</td><td class="num">'+fmtEUR(it.betrag)+'</td></tr>';
+    }).join('');
+    if(inv.anfahrt && inv.anfahrt.active){
+      rows += '<tr><td>Anfahrtspauschale</td><td class="num">'+fmtEUR(inv.anfahrt.betrag)+'</td><td class="num">1</td><td class="num">'+fmtEUR(inv.anfahrt.betrag)+'</td></tr>';
+    }
+    document.getElementById('pItems').innerHTML = rows;
+    document.getElementById('pTotal').textContent = fmtEUR(invoiceTotal(inv));
+
     document.getElementById('pNote').textContent =
-      'Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.' +
-      (s.iban? '\nBitte überweisen Sie den Betrag auf IBAN '+s.iban+'.':'') +
-      '\nZahlbar ohne Abzug innerhalb von 14 Tagen.';
+      'Hinweis: Gemäß § 19 UStG enthält der ausgewiesene Betrag keine Umsatzsteuer.\n' +
+      'Zahlbar innerhalb von 14 Tagen';
+
+    document.getElementById('pPayLeft').innerHTML =
+      (s.empfaenger? 'Empfänger: '+s.empfaenger+'<br>':'') +
+      (s.iban? 'IBAN: '+s.iban+'<br>':'') +
+      (s.bic? 'BIC: '+s.bic+'<br>':'') +
+      (s.bank? 'Bank: '+s.bank:'');
+    document.getElementById('pPayRight').innerHTML =
+      (s.strasse? s.strasse+'<br>':'') +
+      (s.ort? s.ort+'<br>':'') +
+      (s.telefon? 'Telefon: '+s.telefon+'<br>':'') +
+      (s.email? 'E-Mail: '+s.email:'');
+
     window.print();
   }
+
+  function loadImageDims(dataUrl){
+    return new Promise(function(resolve){
+      var img = new Image();
+      img.onload = function(){ resolve({w:img.naturalWidth, h:img.naturalHeight}); };
+      img.onerror = function(){ resolve(null); };
+      img.src = dataUrl;
+    });
+  }
+
+  async function downloadInvoicePdf(id){
+    if(typeof window.jspdf === 'undefined'){ showToast('PDF-Bibliothek konnte nicht geladen werden.'); return; }
+    var inv = data.invoices.find(function(i){return i.id===id;});
+    if(!inv) return;
+    var cust = data.customers.find(function(c){return c.id===inv.customerId;});
+    var s = data.settings;
+
+    var doc = new window.jspdf.jsPDF({unit:'mm', format:'a4'});
+    var pageW = 210, marginL = 25, marginR = 25, contentR = pageW - marginR;
+    var y = 24;
+
+    if(s.logoDataUrl){
+      try{
+        var dims = await loadImageDims(s.logoDataUrl);
+        var fmt = /png/i.test(s.logoDataUrl) ? 'PNG' : (/svg/i.test(s.logoDataUrl) ? null : 'JPEG');
+        if(fmt && dims){
+          var maxW = 34, maxH = 26;
+          var ratio = Math.min(maxW/dims.w, maxH/dims.h);
+          var w = dims.w*ratio, h = dims.h*ratio;
+          doc.addImage(s.logoDataUrl, fmt, (pageW-w)/2, y, w, h);
+          y += h + 6;
+        }
+      }catch(e){ /* Logo überspringen, falls Format nicht unterstützt wird */ }
+    }
+
+    if(s.firma){
+      doc.setFont('times','bold'); doc.setFontSize(12);
+      doc.text(s.firma.toUpperCase().split('').join('\u200a\u200a'), pageW/2, y, {align:'center'});
+      y += 6;
+    }
+    if(s.inhaber){
+      doc.setFont('times','italic'); doc.setFontSize(11);
+      doc.text(s.inhaber, pageW/2, y, {align:'center'});
+      y += 6;
+    }
+
+    y += 14;
+    var headTopY = y;
+    doc.setFont('times','bold'); doc.setFontSize(9);
+    doc.text('RECHNUNG AN:', marginL, y);
+    doc.setFont('times','normal'); doc.setFontSize(10.5);
+    var toLines = cust ? [cust.name, cust.strasse||'', ((cust.plz||'')+' '+(cust.ort||'')).trim()].filter(Boolean) : [];
+    var ty = y + 6;
+    toLines.forEach(function(l){ doc.text(l, marginL, ty); ty += 5; });
+
+    doc.setFont('times','normal'); doc.setFontSize(10.5);
+    doc.text('Rechnung Nr. '+inv.number, contentR, headTopY, {align:'right'});
+    doc.text(fmtDateDE(inv.date), contentR, headTopY+5, {align:'right'});
+    var metaY = headTopY+10;
+    if(s.steuernr){ doc.text('Steuernr.: '+s.steuernr, contentR, metaY, {align:'right'}); metaY += 5; }
+
+    y = Math.max(ty, metaY) + 12;
+
+    var colDesc = marginL, colPreis = 145, colAnzahl = 168, colSumme = contentR;
+    doc.setDrawColor(30,30,30); doc.setLineWidth(0.4);
+    doc.line(marginL, y, contentR, y);
+    y += 5;
+    doc.setFont('times','bold'); doc.setFontSize(8.5);
+    doc.text('BESCHREIBUNG', colDesc, y);
+    doc.text('PREIS', colPreis, y, {align:'right'});
+    doc.text('ANZAHL', colAnzahl, y, {align:'right'});
+    doc.text('SUMME', colSumme, y, {align:'right'});
+    y += 2.5;
+    doc.setLineWidth(0.25);
+    doc.line(marginL, y, contentR, y);
+    y += 6;
+
+    doc.setFont('times','normal'); doc.setFontSize(10);
+    var rows = inv.items.slice();
+    if(inv.anfahrt && inv.anfahrt.active){
+      rows.push({leistung:'Anfahrtspauschale', horse:'', preis:inv.anfahrt.betrag, menge:1, betrag:inv.anfahrt.betrag});
+    }
+    rows.forEach(function(it){
+      if(y > 265){ doc.addPage(); y = 24; }
+      doc.text(String(it.leistung||''), colDesc, y);
+      doc.text(fmtEUR(it.preis), colPreis, y, {align:'right'});
+      doc.text(String(it.menge||1), colAnzahl, y, {align:'right'});
+      doc.text(fmtEUR(it.betrag), colSumme, y, {align:'right'});
+      y += 5.5;
+      if(it.horse && it.horse!=='—'){
+        doc.setFontSize(8.5); doc.setTextColor(110,110,110);
+        doc.text(it.horse, colDesc, y);
+        doc.setFontSize(10); doc.setTextColor(0,0,0);
+        y += 5;
+      }
+      doc.setDrawColor(210,210,210); doc.setLineWidth(0.2);
+      doc.line(marginL, y-2.5, contentR, y-2.5);
+    });
+
+    y += 3;
+    doc.setDrawColor(30,30,30); doc.setLineWidth(0.4);
+    doc.line(marginL, y, contentR, y);
+    y += 7;
+    doc.setFont('times','bold'); doc.setFontSize(9);
+    doc.text('TOTAL', colAnzahl, y, {align:'right'});
+    doc.setFontSize(11);
+    doc.text(fmtEUR(invoiceTotal(inv)), colSumme, y, {align:'right'});
+
+    y += 16;
+    doc.setFont('times','normal'); doc.setFontSize(8.5); doc.setTextColor(70,70,70);
+    doc.text('Hinweis: Gemäß § 19 UStG enthält der ausgewiesene Betrag keine Umsatzsteuer.', marginL, y);
+    y += 4.5;
+    doc.text('Zahlbar innerhalb von 14 Tagen', marginL, y);
+    doc.setTextColor(0,0,0);
+
+    y += 14;
+    doc.setFont('times','bold'); doc.setFontSize(8);
+    doc.text('ZAHLUNGSINFORMATIONEN', marginL, y);
+    doc.setFont('times','normal'); doc.setFontSize(9);
+    var payLeft = [];
+    if(s.empfaenger) payLeft.push('Empfänger: '+s.empfaenger);
+    if(s.iban) payLeft.push('IBAN: '+s.iban);
+    if(s.bic) payLeft.push('BIC: '+s.bic);
+    if(s.bank) payLeft.push('Bank: '+s.bank);
+    var payRight = [];
+    if(s.strasse) payRight.push(s.strasse);
+    if(s.ort) payRight.push(s.ort);
+    if(s.telefon) payRight.push('Telefon: '+s.telefon);
+    if(s.email) payRight.push('E-Mail: '+s.email);
+    var py = y + 5;
+    payLeft.forEach(function(l){ doc.text(l, marginL, py); py += 4.6; });
+    var py2 = y + 5;
+    payRight.forEach(function(l){ doc.text(l, contentR, py2, {align:'right'}); py2 += 4.6; });
+
+    var blob = doc.output('blob');
+    downloadBlob('Rechnung-'+inv.number+'.pdf', blob);
+  }
+
 
   // ================= AUSGABEN =================
   function renderExpenses(){
     document.getElementById('aDatum').value = document.getElementById('aDatum').value || todayISO();
     var tbody = document.getElementById('expTable');
     if(data.expenses.length===0){
-      tbody.innerHTML = '<tr><td colspan="5" class="empty">Noch keine Ausgaben erfasst.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" class="empty">Noch keine Ausgaben erfasst.</td></tr>';
       return;
     }
-    tbody.innerHTML = data.expenses.slice().sort(function(a,b){return a.date<b.date?1:-1;}).map(function(e){
-      return '<tr><td>'+fmtDateDE(e.date)+'</td><td>'+e.kategorie+'</td><td>'+(e.beschreibung||'')+'</td>'+
+    var sorted = data.expenses.slice().sort(function(a,b){return a.date<b.date?1:-1;});
+    tbody.innerHTML = sorted.map(function(e){
+      return '<tr data-exprow="'+e.id+'"><td>'+fmtDateDE(e.date)+'</td><td>'+e.kategorie+'</td><td>'+(e.beschreibung||'')+'</td>'+
         '<td class="right num">'+fmtEUR(e.betrag)+'</td>'+
+        '<td><button class="btn ghost small" data-receipts="'+e.id+'" type="button">📎 …</button></td>'+
         '<td><button class="btn ghost" data-delexp="'+e.id+'" type="button">Löschen</button></td></tr>';
     }).join('');
     tbody.querySelectorAll('[data-delexp]').forEach(function(b){
       b.addEventListener('click', function(){
-        data.expenses = data.expenses.filter(function(e){return e.id!==b.dataset.delexp;});
-        save(); renderExpenses();
+        if(!confirm('Ausgabe wirklich löschen? Angehängte Belege werden mitgelöscht.')) return;
+        var id = b.dataset.delexp;
+        data.expenses = data.expenses.filter(function(e){return e.id!==id;});
+        save();
+        getReceiptsForExpense(id).then(function(list){
+          list.forEach(function(r){ deleteReceiptById(r.id); });
+        });
+        renderExpenses();
       });
+    });
+    tbody.querySelectorAll('[data-receipts]').forEach(function(b){
+      b.addEventListener('click', function(){ openReceiptModal(b.dataset.receipts); });
+    });
+    sorted.forEach(function(e){
+      getReceiptsForExpense(e.id).then(function(list){
+        var btn = tbody.querySelector('[data-receipts="'+e.id+'"]');
+        if(btn) btn.textContent = '📎 ' + list.length;
+      }).catch(function(){});
     });
   }
 
   document.getElementById('saveExpenseBtn').addEventListener('click', function(){
     var betrag = Number(document.getElementById('aBetrag').value);
     if(!betrag || betrag<=0){ showToast('Bitte einen gültigen Betrag angeben.'); return; }
-    data.expenses.push({
+    var newExpense = {
       id: uid(),
       date: document.getElementById('aDatum').value || todayISO(),
       kategorie: document.getElementById('aKategorie').value,
       beschreibung: document.getElementById('aBeschreibung').value.trim(),
       betrag: betrag
-    });
+    };
+    data.expenses.push(newExpense);
     save();
+
+    var fileInput = document.getElementById('aBelege');
+    var files = fileInput.files ? Array.from(fileInput.files) : [];
+    var savePromise = Promise.all(files.map(function(f){ return saveReceiptFile(newExpense.id, f); }));
+
     document.getElementById('aBetrag').value='';
     document.getElementById('aBeschreibung').value='';
+    fileInput.value='';
     renderExpenses();
-    showToast('Ausgabe gespeichert.');
+    showToast(files.length ? 'Ausgabe mit '+files.length+' Beleg(en) gespeichert.' : 'Ausgabe gespeichert.');
+    savePromise.then(function(){ renderExpenses(); }).catch(function(){ showToast('Beleg konnte nicht gespeichert werden.'); });
+  });
+
+  // ---------- Beleg-Modal ----------
+  var receiptModalExpenseId = null;
+  var receiptObjectUrls = [];
+  function revokeReceiptUrls(){
+    receiptObjectUrls.forEach(function(u){ try{ URL.revokeObjectURL(u); }catch(e){} });
+    receiptObjectUrls = [];
+  }
+  function openReceiptModal(expenseId){
+    receiptModalExpenseId = expenseId;
+    document.getElementById('receiptModalOverlay').classList.remove('hidden');
+    renderReceiptModalList();
+  }
+  function closeReceiptModal(){
+    document.getElementById('receiptModalOverlay').classList.add('hidden');
+    revokeReceiptUrls();
+    receiptModalExpenseId = null;
+  }
+  document.getElementById('receiptModalClose').addEventListener('click', closeReceiptModal);
+  document.getElementById('receiptModalOverlay').addEventListener('click', function(e){
+    if(e.target.id==='receiptModalOverlay') closeReceiptModal();
+  });
+
+  function renderReceiptModalList(){
+    if(!receiptModalExpenseId) return;
+    revokeReceiptUrls();
+    var list = document.getElementById('receiptModalList');
+    list.innerHTML = '<div class="muted" style="font-size:13px;">Lade Belege…</div>';
+    getReceiptsForExpense(receiptModalExpenseId).then(function(receipts){
+      if(receipts.length===0){
+        list.innerHTML = '<div class="empty">Noch keine Belege angehängt.</div>';
+        return;
+      }
+      list.innerHTML = receipts.map(function(r){
+        return '<div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px solid var(--line);">'+
+          '<div style="font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">'+(r.filename||'Beleg')+' <span class="muted">('+fmtBytes(r.size||0)+')</span></div>'+
+          '<div style="display:flex; gap:6px; flex-shrink:0;">'+
+            '<button class="btn secondary small" data-viewrec="'+r.id+'" type="button">Öffnen</button>'+
+            '<button class="btn ghost small" data-delrec="'+r.id+'" type="button">Löschen</button>'+
+          '</div></div>';
+      }).join('');
+      list.querySelectorAll('[data-viewrec]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          var r = receipts.find(function(x){return x.id===btn.dataset.viewrec;});
+          if(!r) return;
+          var url = URL.createObjectURL(r.blob);
+          receiptObjectUrls.push(url);
+          window.open(url, '_blank');
+        });
+      });
+      list.querySelectorAll('[data-delrec]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          deleteReceiptById(btn.dataset.delrec).then(function(){
+            renderReceiptModalList();
+            renderExpenses();
+          });
+        });
+      });
+    });
+  }
+
+  document.getElementById('receiptModalUpload').addEventListener('change', function(e){
+    if(!receiptModalExpenseId) return;
+    var files = Array.from(e.target.files||[]);
+    Promise.all(files.map(function(f){ return saveReceiptFile(receiptModalExpenseId, f); })).then(function(){
+      e.target.value='';
+      renderReceiptModalList();
+      renderExpenses();
+      showToast('Beleg hinzugefügt.');
+    });
   });
 
   // ================= STEUER =================
@@ -956,22 +1364,22 @@ tr:last-child td{border-bottom:none;}
     return v;
   }
 
-  function triggerDownload(filename, blob){
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url; a.download = filename;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
-  }
-
-  function offerDownload(filename, csvString){
-    var blob = new Blob(["\uFEFF"+csvString], {type:"text/csv;charset=utf-8;"});
+  function downloadBlob(filename, blob){
     try{
-      triggerDownload(filename, blob);
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
       showToast('Datei "'+filename+'" wurde heruntergeladen.');
     }catch(err){
       showToast('Download fehlgeschlagen: '+(err&&err.message?err.message:'unbekannter Fehler'));
     }
+  }
+
+  function offerDownload(filename, csvString){
+    var blob = new Blob(["\uFEFF"+csvString], {type:"text/csv;charset=utf-8;"});
+    downloadBlob(filename, blob);
   }
 
   document.getElementById('exportCatCsv').addEventListener('click', function(){
@@ -1025,8 +1433,7 @@ tr:last-child td{border-bottom:none;}
     offerDownload('Bankumsaetze-Import-'+year+'.csv', csv);
   });
 
-  document.getElementById('exportDetailCsv').addEventListener('click', function(){
-    var year = Number(document.getElementById('taxYear').value)||new Date().getFullYear();
+  function buildDetailCsv(year){
     var rows = [["Typ","Datum","Nummer/Kategorie","Kunde/Beschreibung","Status","Betrag EUR"]];
     data.invoices.filter(function(i){return (i.date||'').slice(0,4)===String(year);}).forEach(function(i){
       rows.push(["Rechnung", fmtDateDE(i.date), i.number, custName(i.customerId), i.status, invoiceTotal(i).toFixed(2).replace('.',',')]);
@@ -1037,8 +1444,55 @@ tr:last-child td{border-bottom:none;}
     data.expenses.filter(function(e){return (e.date||'').slice(0,4)===String(year);}).forEach(function(e){
       rows.push(["Ausgabe", fmtDateDE(e.date), e.kategorie, e.beschreibung||"", "-", e.betrag.toFixed(2).replace('.',',')]);
     });
-    var csv = rows.map(function(r){return r.map(csvEscape).join(';');}).join('\r\n');
-    offerDownload('Detail-Journal-'+year+'.csv', csv);
+    return rows.map(function(r){return r.map(csvEscape).join(';');}).join('\r\n');
+  }
+
+  document.getElementById('exportDetailCsv').addEventListener('click', function(){
+    var year = Number(document.getElementById('taxYear').value)||new Date().getFullYear();
+    offerDownload('Detail-Journal-'+year+'.csv', buildDetailCsv(year));
+  });
+
+  function safeFileToken(s){
+    return String(s||'').replace(/[\\/:*?"<>|]+/g,'-').replace(/\s+/g,'_').slice(0,60);
+  }
+
+  document.getElementById('exportReceiptsZip').addEventListener('click', async function(){
+    if(typeof window.JSZip === 'undefined'){ showToast('ZIP-Bibliothek konnte nicht geladen werden.'); return; }
+    var statusEl = document.getElementById('receiptZipStatus');
+    var year = Number(document.getElementById('taxYear').value)||new Date().getFullYear();
+    var yearExpenses = data.expenses.filter(function(e){return (e.date||'').slice(0,4)===String(year);});
+    if(yearExpenses.length===0){ showToast('Keine Ausgaben in diesem Jahr.'); return; }
+
+    statusEl.textContent = 'Belege werden gesammelt…';
+    try{
+      var zip = new window.JSZip();
+      var folder = zip.folder('Belege-'+year);
+      var count = 0;
+      for(var i=0;i<yearExpenses.length;i++){
+        var e = yearExpenses[i];
+        var receipts = await getReceiptsForExpense(e.id);
+        for(var j=0;j<receipts.length;j++){
+          var r = receipts[j];
+          var ext = (r.filename && r.filename.indexOf('.')>-1) ? r.filename.slice(r.filename.lastIndexOf('.')) : '';
+          var name = fmtDateDE(e.date).replace(/\./g,'-')+'_'+safeFileToken(e.kategorie)+'_'+safeFileToken(e.beschreibung||r.filename||('Beleg'+(j+1)))+ext;
+          folder.file(name, r.blob);
+          count++;
+        }
+      }
+      if(count===0){
+        statusEl.textContent = '';
+        showToast('Keine Belege im ausgewählten Jahr gefunden. Belege lassen sich beim Erfassen einer Ausgabe oder über "📎" in der Ausgabenliste anhängen.');
+        return;
+      }
+      zip.file('Detail-Journal-'+year+'.csv', "\uFEFF"+buildDetailCsv(year));
+      statusEl.textContent = 'ZIP wird erstellt…';
+      var blob = await zip.generateAsync({type:'blob'});
+      downloadBlob('Belege-'+year+'.zip', blob);
+      statusEl.textContent = count+' Beleg(e) in der ZIP-Datei.';
+    }catch(err){
+      statusEl.textContent = '';
+      showToast('ZIP konnte nicht erstellt werden.');
+    }
   });
 
   // ================= EINSTELLUNGEN =================
@@ -1050,11 +1504,37 @@ tr:last-child td{border-bottom:none;}
     document.getElementById('sOrt').value = s.ort||'';
     document.getElementById('sTelefon').value = s.telefon||'';
     document.getElementById('sEmail').value = s.email||'';
+    document.getElementById('sEmpfaenger').value = s.empfaenger||'';
     document.getElementById('sIban').value = s.iban||'';
+    document.getElementById('sBic').value = s.bic||'';
+    document.getElementById('sBank').value = s.bank||'';
     document.getElementById('sSteuernr').value = s.steuernr||'';
     document.getElementById('sKmRate').value = s.kmRate;
+    var preview = document.getElementById('sLogoPreview');
+    if(s.logoDataUrl){ preview.src = s.logoDataUrl; preview.style.display='inline-block'; }
+    else { preview.style.display='none'; }
     renderServiceRows();
   }
+
+  document.getElementById('sLogoFile').addEventListener('change', function(e){
+    var file = e.target.files[0];
+    if(!file) return;
+    if(file.size > 1500000){ showToast('Bild ist zu groß (max. ca. 1,5 MB).'); return; }
+    var reader = new FileReader();
+    reader.onload = function(){
+      data.settings.logoDataUrl = reader.result;
+      save();
+      renderSettings();
+      showToast('Logo gespeichert.');
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  });
+  document.getElementById('sLogoRemove').addEventListener('click', function(){
+    data.settings.logoDataUrl = '';
+    save();
+    renderSettings();
+  });
 
   document.getElementById('saveSettingsBtn').addEventListener('click', function(){
     var s = data.settings;
@@ -1064,7 +1544,10 @@ tr:last-child td{border-bottom:none;}
     s.ort = document.getElementById('sOrt').value.trim();
     s.telefon = document.getElementById('sTelefon').value.trim();
     s.email = document.getElementById('sEmail').value.trim();
+    s.empfaenger = document.getElementById('sEmpfaenger').value.trim();
     s.iban = document.getElementById('sIban').value.trim();
+    s.bic = document.getElementById('sBic').value.trim();
+    s.bank = document.getElementById('sBank').value.trim();
     s.steuernr = document.getElementById('sSteuernr').value.trim();
     save();
     showToast('Firmendaten gespeichert.');
@@ -1112,12 +1595,7 @@ tr:last-child td{border-bottom:none;}
   document.getElementById('backupBtn').addEventListener('click', function(){
     var json = JSON.stringify(data, null, 2);
     var blob = new Blob([json], {type:"application/json"});
-    try{
-      triggerDownload('hufbuch-backup-'+todayISO()+'.json', blob);
-      showToast('Backup heruntergeladen.');
-    }catch(err){
-      showToast('Backup fehlgeschlagen.');
-    }
+    downloadBlob('hufbuch-backup-'+todayISO()+'.json', blob);
   });
 
   document.getElementById('restoreFile').addEventListener('change', function(e){
