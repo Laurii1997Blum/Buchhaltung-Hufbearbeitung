@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hufbuch — Buchhaltung</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#9C4A2E">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Hufbuch">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EDE6D6; --paper2:#E4DBC6; --ink:#2A2118; --ink-soft:#5B5040;
+  --rust:#9C4A2E; --rust-dark:#7C3A22; --forge:#C97A3D; --moss:#566246; --moss-dark:#3F4835;
+  --line:#D2C3A2; --card:#F6F1E4; --danger:#8C3B2E;
+  --shadow: 0 1px 0 rgba(42,33,24,0.06);
+}
+:root:not([data-theme="light"]){
+  @media (prefers-color-scheme: dark){
+    --paper:#1B1712; --paper2:#221C15; --ink:#EDE3D0; --ink-soft:#B7A98E;
+    --rust:#D08258; --rust-dark:#E0946C; --forge:#E0A56C; --moss:#8CA37B; --moss-dark:#A6BE94;
+    --line:#3A3020; --card:#221C15; --danger:#D08258;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#1B1712; --paper2:#221C15; --ink:#EDE3D0; --ink-soft:#B7A98E;
+  --rust:#D08258; --rust-dark:#E0946C; --forge:#E0A56C; --moss:#8CA37B; --moss-dark:#A6BE94;
+  --line:#3A3020; --card:#221C15; --danger:#D08258;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:'IBM Plex Sans', sans-serif;
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{font-family:'Fraunces', serif; font-weight:600; margin:0 0 4px 0; letter-spacing:-0.01em;}
+.num{font-family:'IBM Plex Mono', monospace;}
+a{color:var(--rust);}
+button{font-family:inherit;}
+
+.app{display:flex; min-height:100vh;}
+
+/* --- ledger tab rail --- */
+.rail{
+  width:210px; flex-shrink:0;
+  padding:28px 0 28px 18px;
+  display:flex; flex-direction:column; gap:2px;
+}
+.rail .brand{padding:0 16px 22px 4px;}
+.rail .brand h1{font-size:22px; line-height:1.1;}
+.rail .brand .sub{font-size:12px; color:var(--ink-soft); margin-top:2px;}
+.tab-btn{
+  position:relative;
+  text-align:left;
+  background:var(--paper2);
+  border:1px solid var(--line);
+  border-right:none;
+  color:var(--ink-soft);
+  padding:11px 14px;
+  font-size:14px;
+  border-radius:8px 0 0 8px;
+  cursor:pointer;
+  margin-right:-1px;
+}
+.tab-btn:hover{color:var(--ink);}
+.tab-btn.active{
+  background:var(--card);
+  color:var(--rust-dark);
+  font-weight:600;
+  border-color:var(--line);
+  transform:translateX(6px);
+  box-shadow:var(--shadow);
+}
+.rail-footer{margin-top:auto; padding:16px 16px 0 4px; font-size:11px; color:var(--ink-soft);}
+.theme-toggle{
+  border:1px solid var(--line); background:transparent; color:var(--ink-soft);
+  border-radius:6px; padding:5px 9px; font-size:12px; cursor:pointer; margin-top:10px;
+}
+
+/* --- main --- */
+main{flex:1; padding:28px 34px 60px; max-width:980px;}
+.panel{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:26px 28px;
+  margin-bottom:20px;
+  box-shadow:var(--shadow);
+}
+.panel + .panel{margin-top:0;}
+.panel h2{font-size:20px; margin-bottom:2px;}
+.panel .hint{font-size:13px; color:var(--ink-soft); margin-bottom:18px;}
+.hidden{display:none !important;}
+
+.grid{display:grid; gap:14px;}
+.grid-2{grid-template-columns:1fr 1fr;}
+.grid-3{grid-template-columns:1fr 1fr 1fr;}
+@media (max-width:720px){ .grid-2,.grid-3{grid-template-columns:1fr;} .app{flex-direction:column;} .rail{width:100%; flex-direction:row; overflow-x:auto; padding:14px; gap:8px;} .tab-btn{border-radius:8px; border-right:1px solid var(--line);} .tab-btn.active{transform:none;} main{padding:20px;} }
+
+label{display:block; font-size:12.5px; color:var(--ink-soft); margin-bottom:5px;}
+input, select, textarea{
+  width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:6px;
+  background:var(--paper); color:var(--ink); font-size:14px; font-family:inherit;
+}
+input:focus, select:focus, textarea:focus{outline:2px solid var(--forge); outline-offset:1px;}
+.field{margin-bottom:0;}
+
+.btn{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:9px 16px; border-radius:7px; border:1px solid var(--rust);
+  background:var(--rust); color:#FBF6EC; font-size:14px; font-weight:500; cursor:pointer;
+}
+.btn:hover{background:var(--rust-dark); border-color:var(--rust-dark);}
+.btn.secondary{background:transparent; color:var(--rust-dark); border-color:var(--line);}
+.btn.secondary:hover{border-color:var(--rust);}
+.btn.ghost{background:transparent; border:none; color:var(--ink-soft); padding:6px 8px;}
+.btn.ghost:hover{color:var(--danger);}
+.btn.small{padding:5px 10px; font-size:12.5px;}
+.btn:disabled{opacity:0.45; cursor:not-allowed;}
+
+table{width:100%; border-collapse:collapse; font-size:13.5px;}
+th{text-align:left; font-weight:600; color:var(--ink-soft); font-size:11.5px; text-transform:none; padding:7px 8px; border-bottom:1px solid var(--line);}
+td{padding:9px 8px; border-bottom:1px solid var(--line);}
+tr:last-child td{border-bottom:none;}
+.right{text-align:right;}
+.muted{color:var(--ink-soft);}
+.badge{display:inline-block; padding:2px 8px; border-radius:20px; font-size:11.5px; font-weight:600;}
+.badge.open{background:rgba(156,74,46,0.15); color:var(--rust-dark);}
+.badge.paid{background:rgba(86,98,70,0.18); color:var(--moss-dark);}
+
+.stat-row{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px;}
+@media (max-width:720px){.stat-row{grid-template-columns:1fr 1fr;}}
+.stat{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 18px;}
+.stat .label{font-size:12px; color:var(--ink-soft); margin-bottom:6px;}
+.stat .value{font-family:'Fraunces',serif; font-size:26px; font-weight:600;}
+.stat .value.rust{color:var(--rust-dark);}
+.stat .value.moss{color:var(--moss-dark);}
+
+.divider{border:none; border-top:1px solid var(--line); margin:20px 0;}
+.item-row{display:grid; grid-template-columns:1.4fr 1.4fr 0.9fr auto; gap:10px; align-items:end; margin-bottom:10px;}
+@media (max-width:720px){.item-row{grid-template-columns:1fr; }}
+.item-row .del{align-self:center;}
+.section-title{font-size:13px; font-weight:600; color:var(--ink-soft); margin:18px 0 8px; text-transform:none;}
+.toast{
+  position:fixed; bottom:22px; right:22px; background:var(--ink); color:var(--paper);
+  padding:11px 18px; border-radius:8px; font-size:13.5px; box-shadow:0 4px 18px rgba(0,0,0,0.25);
+  opacity:0; transform:translateY(8px); transition:all .25s ease; pointer-events:none; z-index:50;
+}
+.toast.show{opacity:1; transform:translateY(0);}
+.empty{padding:26px 10px; text-align:center; color:var(--ink-soft); font-size:13.5px;}
+.checkline{display:flex; align-items:center; gap:8px; font-size:13.5px; color:var(--ink);}
+.checkline input{width:auto;}
+.pill-list{display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;}
+.pill{background:var(--paper2); border:1px solid var(--line); border-radius:16px; padding:4px 10px 4px 12px; font-size:12.5px; display:flex; align-items:center; gap:6px;}
+.pill button{background:none; border:none; color:var(--ink-soft); cursor:pointer; font-size:13px; line-height:1;}
+
+/* print invoice */
+#print-area{display:none;}
+@media print{
+  body *{visibility:hidden;}
+  #print-area, #print-area *{visibility:visible;}
+  #print-area{display:block; position:absolute; top:0; left:0; width:100%; padding:30px; color:#111; background:#fff;}
+  .inv-head{display:flex; justify-content:space-between; margin-bottom:34px;}
+  .inv-from{font-size:12px; color:#444; white-space:pre-line;}
+  .inv-to{font-size:13px; white-space:pre-line;}
+  .inv-meta{margin:18px 0 26px; font-size:13px;}
+  .inv-meta div{margin-bottom:3px;}
+  table.pinv{width:100%; border-collapse:collapse; font-size:13px;}
+  table.pinv th{border-bottom:1.5px solid #333; text-align:left; padding:6px 4px; font-size:11.5px; text-transform:uppercase; letter-spacing:.03em;}
+  table.pinv td{padding:8px 4px; border-bottom:1px solid #ddd;}
+  .pinv-total{margin-top:10px; text-align:right; font-size:15px; font-weight:700;}
+  .pinv-note{margin-top:34px; font-size:11.5px; color:#555; white-space:pre-line;}
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <nav class="rail">
+    <div class="brand">
+      <h1>Hufbuch</h1>
+      <div class="sub">Buchhaltung &amp; Rechnungen</div>
+    </div>
+    <button class="tab-btn active" data-tab="dashboard">Übersicht</button>
+    <button class="tab-btn" data-tab="kunden">Kunden &amp; Pferde</button>
+    <button class="tab-btn" data-tab="rechnung-neu">Rechnung erstellen</button>
+    <button class="tab-btn" data-tab="rechnungen">Rechnungen</button>
+    <button class="tab-btn" data-tab="ausgaben">Ausgaben</button>
+    <button class="tab-btn" data-tab="steuer">Steuer-Export</button>
+    <button class="tab-btn" data-tab="einstellungen">Einstellungen</button>
+    <div class="rail-footer">
+      Alle Daten bleiben lokal in diesem Browser gespeichert.
+      <div><button class="theme-toggle" id="themeToggle">Dunkles Design</button></div>
+    </div>
+  </nav>
+
+  <main>
+
+    <!-- DASHBOARD -->
+    <section class="tab-page" id="tab-dashboard">
+      <div class="stat-row" id="statRow"></div>
+      <div class="panel">
+        <h2>Offene Rechnungen</h2>
+        <div class="hint">Noch nicht als bezahlt markiert — zählen steuerlich erst bei Zahlungseingang.</div>
+        <table id="openInvTable"><thead><tr><th>Nr.</th><th>Kunde</th><th>Datum</th><th class="right">Betrag</th><th></th></tr></thead><tbody></tbody></table>
+      </div>
+      <div class="panel">
+        <h2>Letzte Aktivität</h2>
+        <table id="recentTable"><thead><tr><th>Datum</th><th>Art</th><th>Beschreibung</th><th class="right">Betrag</th></tr></thead><tbody></tbody></table>
+      </div>
+    </section>
+
+    <!-- KUNDEN -->
+    <section class="tab-page hidden" id="tab-kunden">
+      <div class="panel">
+        <h2>Neuen Kunden anlegen</h2>
+        <div class="hint">Einmal anlegen — bei jeder künftigen Rechnung wird alles automatisch vorausgefüllt, inklusive Anfahrt.</div>
+        <div class="grid grid-2">
+          <div class="field"><label>Name / Stallname</label><input id="kName" placeholder="z. B. Anna Meier / Hof Sonnenweide"></div>
+          <div class="field"><label>Straße &amp; Hausnummer</label><input id="kStrasse"></div>
+          <div class="field"><label>PLZ</label><input id="kPlz"></div>
+          <div class="field"><label>Ort</label><input id="kOrt"></div>
+          <div class="field"><label>Fahrtstrecke pro Termin (km, Hin+Rück)</label><input id="kKm" type="number" min="0" step="0.5" placeholder="z. B. 24"></div>
+        </div>
+        <div class="section-title">Pferde bei diesem Kunden</div>
+        <div style="display:flex; gap:10px;">
+          <input id="kPferdInput" placeholder="Pferdename, dann Enter oder Hinzufügen">
+          <button class="btn secondary small" id="kPferdAdd" type="button">Hinzufügen</button>
+        </div>
+        <div class="pill-list" id="kPferdList"></div>
+        <button class="btn" style="margin-top:18px;" id="saveCustomerBtn">Kunde speichern</button>
+      </div>
+
+      <div class="panel">
+        <h2>Kunden</h2>
+        <div class="hint" id="custCount"></div>
+        <table><thead><tr><th>Name</th><th>Ort</th><th>Pferde</th><th class="right">km/Termin</th><th></th></tr></thead><tbody id="custTable"></tbody></table>
+      </div>
+    </section>
+
+    <!-- RECHNUNG NEU -->
+    <section class="tab-page hidden" id="tab-rechnung-neu">
+      <div class="panel">
+        <h2>Neue Rechnung</h2>
+        <div class="hint">Kunde wählen — Anfahrt und Adresse werden automatisch übernommen.</div>
+        <div class="grid grid-3">
+          <div class="field"><label>Kunde</label><select id="rKunde"></select></div>
+          <div class="field"><label>Rechnungsdatum</label><input id="rDatum" type="date"></div>
+          <div class="field"><label>Rechnungsnummer</label><input id="rNummer" readonly></div>
+        </div>
+
+        <div class="section-title">Leistungen</div>
+        <div id="itemRows"></div>
+        <button class="btn secondary small" id="addItemBtn" type="button">+ Position hinzufügen</button>
+
+        <hr class="divider">
+
+        <div class="grid grid-2">
+          <div>
+            <div class="checkline"><input type="checkbox" id="rKmDeduct" checked><label style="margin:0;" for="rKmDeduct">Fahrtkosten automatisch als Betriebsausgabe (Kilometergeld) erfassen</label></div>
+            <div class="grid grid-2" style="margin-top:10px;">
+              <div class="field"><label>Gefahrene km (Hin+Rück)</label><input id="rKm" type="number" min="0" step="0.5"></div>
+              <div class="field"><label>Satz €/km</label><input id="rKmRate" type="number" min="0" step="0.01"></div>
+            </div>
+            <div class="muted" style="font-size:12.5px; margin-top:4px;">Betriebsausgabe: <span class="num" id="rKmBetrag">0,00 €</span> — mindert deinen Gewinn, wird nicht dem Kunden berechnet.</div>
+          </div>
+          <div>
+            <div class="checkline"><input type="checkbox" id="rAnfahrtActive"><label style="margin:0;" for="rAnfahrtActive">Anfahrtspauschale zusätzlich dem Kunden in Rechnung stellen</label></div>
+            <div class="field" style="margin-top:10px;"><label>Anfahrtspauschale (€, pauschal)</label><input id="rAnfahrtBetrag" type="number" min="0" step="0.5" disabled></div>
+          </div>
+        </div>
+
+        <hr class="divider">
+        <div class="grid grid-2">
+          <div class="field"><label>Status</label>
+            <select id="rStatus"><option value="offen">Offen</option><option value="bezahlt">Bezahlt</option></select>
+          </div>
+          <div class="field hidden" id="rBezahltAmWrap"><label>Bezahlt am</label><input id="rBezahltAm" type="date"></div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:22px;">
+          <div style="font-family:'Fraunces',serif; font-size:22px;">Summe: <span class="num" id="rGesamt">0,00 €</span></div>
+          <button class="btn" id="saveInvoiceBtn">Rechnung speichern</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- RECHNUNGEN -->
+    <section class="tab-page hidden" id="tab-rechnungen">
+      <div class="panel">
+        <h2>Alle Rechnungen</h2>
+        <table><thead><tr><th>Nr.</th><th>Kunde</th><th>Datum</th><th>Status</th><th class="right">Betrag</th><th></th></tr></thead><tbody id="invTable"></tbody></table>
+      </div>
+    </section>
+
+    <!-- AUSGABEN -->
+    <section class="tab-page hidden" id="tab-ausgaben">
+      <div class="panel">
+        <h2>Ausgabe erfassen</h2>
+        <div class="grid grid-3">
+          <div class="field"><label>Datum</label><input id="aDatum" type="date"></div>
+          <div class="field"><label>Kategorie</label>
+            <select id="aKategorie">
+              <option>Material &amp; Beschlagzubehör</option>
+              <option>Werkzeug &amp; Ausrüstung</option>
+              <option>Berufskleidung &amp; Schutz</option>
+              <option>Fortbildung &amp; Fachliteratur</option>
+              <option>Versicherung</option>
+              <option>Telefon &amp; Büro</option>
+              <option>Kfz &amp; Fahrzeugkosten</option>
+              <option>Sonstige Betriebsausgabe</option>
+            </select>
+          </div>
+          <div class="field"><label>Betrag (€)</label><input id="aBetrag" type="number" min="0" step="0.01"></div>
+        </div>
+        <div class="field" style="margin-top:12px;"><label>Beschreibung</label><input id="aBeschreibung" placeholder="z. B. Hufeisen &amp; Nägel, Firma XY"></div>
+        <button class="btn" style="margin-top:16px;" id="saveExpenseBtn">Ausgabe speichern</button>
+      </div>
+
+      <div class="panel">
+        <h2>Alle Ausgaben</h2>
+        <table><thead><tr><th>Datum</th><th>Kategorie</th><th>Beschreibung</th><th class="right">Betrag</th><th></th></tr></thead><tbody id="expTable"></tbody></table>
+      </div>
+    </section>
+
+    <!-- STEUER EXPORT -->
+    <section class="tab-page hidden" id="tab-steuer">
+      <div class="panel">
+        <h2>Steuervorbereitung (EÜR)</h2>
+        <div class="hint">Wichtig zu wissen: WISO Steuer erlaubt keinen generischen Kategorien-Import in die EÜR — importierbar sind dort nur Bankumsätze, die du danach den EÜR-Konten zuordnest. Unten stehen beide Wege.</div>
+        <div class="field" style="max-width:200px;"><label>Steuerjahr</label><input id="taxYear" type="number"></div>
+        <div class="stat-row" style="margin-top:16px;">
+          <div class="stat"><div class="label">Einnahmen (bezahlt)</div><div class="value moss num" id="tEinnahmen">0,00 €</div></div>
+          <div class="stat"><div class="label">Betriebsausgaben</div><div class="value rust num" id="tAusgaben">0,00 €</div></div>
+          <div class="stat"><div class="label">davon Kilometergeld</div><div class="value num" id="tKm">0,00 €</div></div>
+          <div class="stat"><div class="label">Gewinn (EÜR)</div><div class="value num" id="tGewinn">0,00 €</div></div>
+        </div>
+        <table><thead><tr><th>Kategorie</th><th class="right">Summe</th></tr></thead><tbody id="taxCatTable"></tbody></table>
+
+        <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:22px;">
+          <button class="btn" id="exportCatCsv">EÜR-Kategorien-Übersicht laden (.csv)</button>
+          <button class="btn secondary" id="copyCatBtn">In Zwischenablage kopieren</button>
+          <button class="btn secondary" id="exportBankCsv">Bankumsätze-Import laden (.csv)</button>
+          <button class="btn secondary" id="exportDetailCsv">Detail-Journal laden (.csv)</button>
+        </div>
+        <div class="hint" style="margin-top:14px;">
+          <strong>EÜR-Kategorien-Übersicht:</strong> fertige Summen pro Kategorie — als CSV laden oder direkt per "In Zwischenablage kopieren" ohne Datei ins EÜR-Formular von WISO Steuer einfügen.<br>
+          <strong>Bankumsätze-Import:</strong> Datei im Format, das WISO Steuer:Sparbuch unter „Daten Im-/Exportieren“ als Bankumsatz einliest. Prüfe beim Import das Spalten-Mapping — je nach WISO-Version kann es leicht abweichen.<br>
+          <strong>Detail-Journal:</strong> jede Rechnung und Ausgabe einzeln, z. B. für den Steuerberater.
+        </div>
+      </div>
+    </section>
+
+    <!-- EINSTELLUNGEN -->
+    <section class="tab-page hidden" id="tab-einstellungen">
+      <div class="panel">
+        <h2>Firmendaten &amp; Rechnungskopf</h2>
+        <div class="grid grid-2">
+          <div class="field"><label>Name / Firma</label><input id="sFirma"></div>
+          <div class="field"><label>Inhaber</label><input id="sInhaber"></div>
+          <div class="field"><label>Straße &amp; Hausnummer</label><input id="sStrasse"></div>
+          <div class="field"><label>PLZ &amp; Ort</label><input id="sOrt"></div>
+          <div class="field"><label>Telefon</label><input id="sTelefon"></div>
+          <div class="field"><label>E-Mail</label><input id="sEmail"></div>
+          <div class="field"><label>IBAN</label><input id="sIban"></div>
+          <div class="field"><label>Steuernummer</label><input id="sSteuernr"></div>
+        </div>
+        <div class="hint" style="margin-top:10px;">Als Kleinunternehmer (§19 UStG) wird auf jeder Rechnung automatisch der gesetzliche Hinweis ergänzt — keine Umsatzsteuer wird ausgewiesen.</div>
+        <button class="btn" style="margin-top:16px;" id="saveSettingsBtn">Speichern</button>
+      </div>
+
+      <div class="panel">
+        <h2>Kilometergeld-Satz</h2>
+        <div class="field" style="max-width:200px;"><label>Satz in €/km</label><input id="sKmRate" type="number" min="0" step="0.01"></div>
+        <button class="btn secondary" style="margin-top:14px;" id="saveKmRateBtn">Speichern</button>
+      </div>
+
+      <div class="panel">
+        <h2>Leistungen &amp; Standardpreise</h2>
+        <div class="hint">Erscheinen als Auswahl beim Erstellen einer Rechnung, inkl. automatischem Preisvorschlag.</div>
+        <div id="serviceRows"></div>
+        <button class="btn secondary small" id="addServiceBtn" type="button">+ Leistung hinzufügen</button>
+        <button class="btn" style="margin-top:16px; display:block;" id="saveServicesBtn">Leistungen speichern</button>
+      </div>
+
+      <div class="panel">
+        <h2>Datensicherung</h2>
+        <div class="hint">Alle Daten liegen nur in diesem Browser. Regelmäßiges Backup wird empfohlen.</div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn secondary" id="backupBtn">Backup herunterladen (.json)</button>
+          <label class="btn secondary" style="cursor:pointer;">Backup wiederherstellen
+            <input type="file" id="restoreFile" accept="application/json" class="hidden">
+          </label>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div id="print-area">
+  <div class="inv-head">
+    <div class="inv-from" id="pFrom"></div>
+    <div class="inv-to" id="pTo"></div>
+  </div>
+  <h2 style="font-family:Georgia,serif;">Rechnung</h2>
+  <div class="inv-meta" id="pMeta"></div>
+  <table class="pinv"><thead><tr><th>Pferd</th><th>Leistung</th><th style="text-align:right;">Betrag</th></tr></thead><tbody id="pItems"></tbody></table>
+  <div class="pinv-total" id="pTotal"></div>
+  <div class="inv-note" id="pNote"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  var STORAGE_KEY = "hufbuch_v1";
+  var memoryFallback = null;
+
+  function defaultData(){
+    return {
+      settings:{
+        firma:"", inhaber:"", strasse:"", ort:"", telefon:"", email:"", iban:"", steuernr:"",
+        kmRate:0.30,
+        invoiceYear: new Date().getFullYear(),
+        nextSeq: 1,
+        services:[
+          {name:"Hufbearbeitung (Barhuf)", preis:45},
+          {name:"Eisenbeschlag, 4 Hufe", preis:120},
+          {name:"Eisenbeschlag, 2 Hufe", preis:70},
+          {name:"Kunststoffbeschlag", preis:140},
+          {name:"Nachbeschlag / Korrektur", preis:35}
+        ]
+      },
+      customers:[],
+      invoices:[],
+      expenses:[]
+    };
+  }
+
+  function load(){
+    try{
+      var raw = window.localStorage.getItem(STORAGE_KEY);
+      if(raw) return JSON.parse(raw);
+    }catch(e){ /* storage unavailable, fall back to memory */ }
+    if(memoryFallback) return memoryFallback;
+    return defaultData();
+  }
+
+  var data = load();
+  if(!data.settings) data = defaultData();
+
+  function save(){
+    memoryFallback = data;
+    try{
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }catch(e){
+      showToast("Achtung: Speichern im Browser fehlgeschlagen — Daten gelten nur für diese Sitzung.");
+    }
+  }
+
+  function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+  function fmtEUR(n){
+    n = Number(n)||0;
+    return n.toLocaleString('de-DE',{minimumFractionDigits:2, maximumFractionDigits:2}) + " €";
+  }
+  function todayISO(){ return new Date().toISOString().slice(0,10); }
+  function fmtDateDE(iso){
+    if(!iso) return "";
+    var p = iso.split("-");
+    return p[2]+"."+p[1]+"."+p[0];
+  }
+
+  var toastTimer=null;
+  function showToast(msg){
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 2600);
+  }
+
+  // ---------- tabs ----------
+  var tabBtns = document.querySelectorAll('.tab-btn');
+  tabBtns.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      tabBtns.forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      document.querySelectorAll('.tab-page').forEach(function(p){ p.classList.add('hidden'); });
+      document.getElementById('tab-'+btn.dataset.tab).classList.remove('hidden');
+      if(btn.dataset.tab==='dashboard') renderDashboard();
+      if(btn.dataset.tab==='kunden') renderCustomers();
+      if(btn.dataset.tab==='rechnung-neu') renderInvoiceForm();
+      if(btn.dataset.tab==='rechnungen') renderInvoiceList();
+      if(btn.dataset.tab==='ausgaben') renderExpenses();
+      if(btn.dataset.tab==='steuer') renderTax();
+      if(btn.dataset.tab==='einstellungen') renderSettings();
+    });
+  });
+
+  // theme
+  var themeBtn = document.getElementById('themeToggle');
+  function applyTheme(){
+    var t = null;
+    try{ t = window.localStorage.getItem('hufbuch_theme'); }catch(e){}
+    if(t==='dark'){ document.documentElement.setAttribute('data-theme','dark'); themeBtn.textContent='Helles Design'; }
+    else if(t==='light'){ document.documentElement.setAttribute('data-theme','light'); themeBtn.textContent='Dunkles Design'; }
+    else { document.documentElement.removeAttribute('data-theme'); themeBtn.textContent='Design wechseln'; }
+  }
+  themeBtn.addEventListener('click', function(){
+    var cur=null;
+    try{ cur = window.localStorage.getItem('hufbuch_theme'); }catch(e){}
+    var next = cur==='dark' ? 'light' : 'dark';
+    try{ window.localStorage.setItem('hufbuch_theme', next); }catch(e){}
+    applyTheme();
+  });
+  applyTheme();
+
+  // ---------- helpers: invoice math ----------
+  function invoiceTotal(inv){
+    var sum = 0;
+    (inv.items||[]).forEach(function(it){ sum += Number(it.betrag)||0; });
+    if(inv.anfahrt && inv.anfahrt.active) sum += Number(inv.anfahrt.betrag)||0;
+    return sum;
+  }
+  function custName(id){
+    var c = data.customers.find(function(c){return c.id===id;});
+    return c ? c.name : "(gelöscht)";
+  }
+
+  // ================= DASHBOARD =================
+  function renderDashboard(){
+    var year = new Date().getFullYear();
+    var paidInv = data.invoices.filter(function(i){ return i.status==='bezahlt' && (i.bezahltAm||i.date||'').slice(0,4)==String(year); });
+    var einnahmen = paidInv.reduce(function(s,i){return s+invoiceTotal(i);},0);
+    var expThisYear = data.expenses.filter(function(e){ return (e.date||'').slice(0,4)===String(year); });
+    var ausgaben = expThisYear.reduce(function(s,e){return s+Number(e.betrag||0);},0);
+    var kmAusgaben = data.invoices.filter(function(i){ return (i.date||'').slice(0,4)===String(year) && i.kmDeduction; })
+      .reduce(function(s,i){return s+Number(i.kmDeduction.betrag||0);},0);
+    ausgaben += kmAusgaben;
+    var offen = data.invoices.filter(function(i){return i.status==='offen';});
+    var offenSum = offen.reduce(function(s,i){return s+invoiceTotal(i);},0);
+
+    var statRow = document.getElementById('statRow');
+    statRow.innerHTML =
+      stat("Einnahmen "+year, fmtEUR(einnahmen), "moss") +
+      stat("Ausgaben "+year, fmtEUR(ausgaben), "rust") +
+      stat("Gewinn "+year, fmtEUR(einnahmen-ausgaben), "") +
+      stat("Offene Rechnungen", fmtEUR(offenSum)+" · "+offen.length+" Stk.", "rust");
+
+    function stat(label,val,cls){
+      return '<div class="stat"><div class="label">'+label+'</div><div class="value '+cls+' num">'+val+'</div></div>';
+    }
+
+    var tbody = document.querySelector('#openInvTable tbody');
+    if(offen.length===0){
+      tbody.innerHTML = '<tr><td colspan="5" class="empty">Keine offenen Rechnungen.</td></tr>';
+    } else {
+      tbody.innerHTML = offen.sort(function(a,b){return a.date<b.date?1:-1;}).map(function(i){
+        return '<tr><td>'+i.number+'</td><td>'+custName(i.customerId)+'</td><td>'+fmtDateDE(i.date)+'</td>'+
+          '<td class="right num">'+fmtEUR(invoiceTotal(i))+'</td>'+
+          '<td><button class="btn small secondary" data-markpaid="'+i.id+'">Als bezahlt markieren</button></td></tr>';
+      }).join('');
+    }
+    tbody.querySelectorAll('[data-markpaid]').forEach(function(b){
+      b.addEventListener('click', function(){
+        var inv = data.invoices.find(function(i){return i.id===b.dataset.markpaid;});
+        inv.status='bezahlt'; inv.bezahltAm = todayISO();
+        save(); renderDashboard(); showToast('Rechnung als bezahlt markiert.');
+      });
+    });
+
+    var recent = [];
+    data.invoices.forEach(function(i){ recent.push({date:i.date, art:'Rechnung', desc:i.number+' · '+custName(i.customerId), betrag:invoiceTotal(i)}); });
+    data.expenses.forEach(function(e){ recent.push({date:e.date, art:'Ausgabe', desc:e.kategorie+(e.beschreibung? ' · '+e.beschreibung:''), betrag:-Number(e.betrag||0)}); });
+    recent.sort(function(a,b){ return a.date<b.date?1:-1; });
+    recent = recent.slice(0,10);
+    var rt = document.querySelector('#recentTable tbody');
+    rt.innerHTML = recent.length ? recent.map(function(r){
+      return '<tr><td>'+fmtDateDE(r.date)+'</td><td>'+r.art+'</td><td>'+r.desc+'</td><td class="right num" style="color:'+(r.betrag<0?'var(--rust-dark)':'var(--moss-dark)')+'">'+(r.betrag<0?'−':'')+fmtEUR(Math.abs(r.betrag))+'</td></tr>';
+    }).join('') : '<tr><td colspan="4" class="empty">Noch keine Einträge.</td></tr>';
+  }
+
+  // ================= KUNDEN =================
+  var pendingHorses = [];
+  function renderCustomers(){
+    document.getElementById('kPferdList').innerHTML = pendingHorses.map(function(h,idx){
+      return '<span class="pill">'+h+' <button data-rmh="'+idx+'" type="button">×</button></span>';
+    }).join('');
+    document.querySelectorAll('[data-rmh]').forEach(function(b){
+      b.addEventListener('click', function(){ pendingHorses.splice(Number(b.dataset.rmh),1); renderCustomers(); });
+    });
+
+    document.getElementById('custCount').textContent = data.customers.length + ' Kunde(n) angelegt';
+    var tbody = document.getElementById('custTable');
+    if(data.customers.length===0){
+      tbody.innerHTML = '<tr><td colspan="5" class="empty">Noch keine Kunden angelegt.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.customers.map(function(c){
+      return '<tr><td>'+c.name+'</td><td>'+(c.ort||'')+'</td><td>'+(c.horses||[]).map(function(h){return h.name;}).join(', ')+'</td>'+
+        '<td class="right num">'+(c.kmDefault||0)+' km</td>'+
+        '<td><button class="btn ghost" data-delcust="'+c.id+'" type="button">Löschen</button></td></tr>';
+    }).join('');
+    tbody.querySelectorAll('[data-delcust]').forEach(function(b){
+      b.addEventListener('click', function(){
+        if(!confirm('Kunde wirklich löschen? Bereits erstellte Rechnungen bleiben erhalten.')) return;
+        data.customers = data.customers.filter(function(c){return c.id!==b.dataset.delcust;});
+        save(); renderCustomers();
+      });
+    });
+  }
+
+  document.getElementById('kPferdAdd').addEventListener('click', addPendingHorse);
+  document.getElementById('kPferdInput').addEventListener('keydown', function(e){
+    if(e.key==='Enter'){ e.preventDefault(); addPendingHorse(); }
+  });
+  function addPendingHorse(){
+    var inp = document.getElementById('kPferdInput');
+    var v = inp.value.trim();
+    if(!v) return;
+    pendingHorses.push(v);
+    inp.value='';
+    renderCustomers();
+  }
+
+  document.getElementById('saveCustomerBtn').addEventListener('click', function(){
+    var name = document.getElementById('kName').value.trim();
+    if(!name){ showToast('Bitte einen Namen eingeben.'); return; }
+    var c = {
+      id: uid(),
+      name: name,
+      strasse: document.getElementById('kStrasse').value.trim(),
+      plz: document.getElementById('kPlz').value.trim(),
+      ort: document.getElementById('kOrt').value.trim(),
+      kmDefault: Number(document.getElementById('kKm').value)||0,
+      horses: pendingHorses.map(function(h){ return {id:uid(), name:h}; })
+    };
+    data.customers.push(c);
+    save();
+    document.getElementById('kName').value='';
+    document.getElementById('kStrasse').value='';
+    document.getElementById('kPlz').value='';
+    document.getElementById('kOrt').value='';
+    document.getElementById('kKm').value='';
+    pendingHorses = [];
+    renderCustomers();
+    showToast('Kunde gespeichert.');
+  });
+
+  // ================= RECHNUNG NEU =================
+  var invItems = [];
+  function resetInvoiceForm(){
+    invItems = [{horse:'', leistung:'', betrag:''}];
+  }
+  resetInvoiceForm();
+
+  function nextInvoiceNumber(){
+    return data.settings.invoiceYear + '-' + String(data.settings.nextSeq).padStart(3,'0');
+  }
+
+  function renderInvoiceForm(){
+    var sel = document.getElementById('rKunde');
+    sel.innerHTML = '<option value="">— Kunde wählen —</option>' + data.customers.map(function(c){
+      return '<option value="'+c.id+'">'+c.name+'</option>';
+    }).join('');
+    document.getElementById('rDatum').value = todayISO();
+    document.getElementById('rNummer').value = nextInvoiceNumber();
+    document.getElementById('rKmRate').value = data.settings.kmRate;
+    document.getElementById('rStatus').value = 'offen';
+    document.getElementById('rBezahltAmWrap').classList.add('hidden');
+    renderItemRows();
+    updateInvoiceTotals();
+  }
+
+  document.getElementById('rKunde').addEventListener('change', function(){
+    var c = data.customers.find(function(c){return c.id===this.value;}, this);
+    if(c){
+      document.getElementById('rKm').value = c.kmDefault||0;
+    }
+    updateInvoiceTotals();
+  });
+
+  document.getElementById('rStatus').addEventListener('change', function(){
+    var w = document.getElementById('rBezahltAmWrap');
+    if(this.value==='bezahlt'){ w.classList.remove('hidden'); document.getElementById('rBezahltAm').value = todayISO(); }
+    else { w.classList.add('hidden'); }
+  });
+
+  document.getElementById('rAnfahrtActive').addEventListener('change', function(){
+    document.getElementById('rAnfahrtBetrag').disabled = !this.checked;
+    updateInvoiceTotals();
+  });
+  ['rKm','rKmRate','rAnfahrtBetrag','rKmDeduct'].forEach(function(id){
+    document.getElementById(id).addEventListener('input', updateInvoiceTotals);
+  });
+
+  function serviceOptions(selected){
+    var opts = '<option value="">— Leistung wählen —</option>';
+    data.settings.services.forEach(function(s){
+      opts += '<option value="'+s.name+'" data-price="'+s.preis+'" '+(s.name===selected?'selected':'')+'>'+s.name+'</option>';
+    });
+    opts += '<option value="__custom__" '+(selected==='__custom__'?'selected':'')+'>Andere / individuell…</option>';
+    return opts;
+  }
+
+  function renderItemRows(){
+    var wrap = document.getElementById('itemRows');
+    var kunde = data.customers.find(function(c){return c.id===document.getElementById('rKunde').value;});
+    var horseOpts = '<option value="">— Pferd —</option>' + (kunde?kunde.horses.map(function(h){return '<option value="'+h.name+'">'+h.name+'</option>';}).join(''):'');
+    horseOpts += '<option value="__custom__">Anderes Pferd…</option>';
+
+    wrap.innerHTML = invItems.map(function(it,idx){
+      return '<div class="item-row" data-idx="'+idx+'">'+
+        '<div class="field"><label>Pferd</label><select class="it-horse">'+horseOpts.replace('value="'+it.horse+'"','value="'+it.horse+'" selected')+'</select></div>'+
+        '<div class="field"><label>Leistung</label><select class="it-service">'+serviceOptions(it.leistung)+'</select></div>'+
+        '<div class="field"><label>Betrag (€)</label><input class="it-betrag" type="number" min="0" step="0.5" value="'+it.betrag+'"></div>'+
+        '<button class="btn ghost del" type="button" title="Position entfernen">✕</button>'+
+        '</div>';
+    }).join('');
+
+    wrap.querySelectorAll('.item-row').forEach(function(row){
+      var idx = Number(row.dataset.idx);
+      row.querySelector('.it-horse').addEventListener('change', function(){
+        if(this.value==='__custom__'){
+          var v = prompt('Pferdename:'); this.value=''; invItems[idx].horse = v||'';
+          renderItemRows();
+        } else { invItems[idx].horse = this.value; }
+      });
+      row.querySelector('.it-service').addEventListener('change', function(){
+        if(this.value==='__custom__'){
+          var v = prompt('Leistung:');
+          invItems[idx].leistung = v||'';
+          renderItemRows();
+        } else {
+          invItems[idx].leistung = this.value;
+          var opt = this.selectedOptions[0];
+          var price = opt.getAttribute('data-price');
+          if(price){ invItems[idx].betrag = price; renderItemRows(); }
+        }
+        updateInvoiceTotals();
+      });
+      row.querySelector('.it-betrag').addEventListener('input', function(){
+        invItems[idx].betrag = this.value; updateInvoiceTotals();
+      });
+      row.querySelector('.del').addEventListener('click', function(){
+        if(invItems.length===1) return;
+        invItems.splice(idx,1); renderItemRows(); updateInvoiceTotals();
+      });
+    });
+  }
+
+  document.getElementById('addItemBtn').addEventListener('click', function(){
+    invItems.push({horse:'', leistung:'', betrag:''});
+    renderItemRows();
+  });
+
+  function updateInvoiceTotals(){
+    var itemsSum = invItems.reduce(function(s,it){ return s + (Number(it.betrag)||0); },0);
+    var km = Number(document.getElementById('rKm').value)||0;
+    var rate = Number(document.getElementById('rKmRate').value)||0;
+    var kmBetrag = km*rate;
+    document.getElementById('rKmBetrag').textContent = fmtEUR(kmBetrag);
+    var anfahrtActive = document.getElementById('rAnfahrtActive').checked;
+    var anfahrtBetrag = anfahrtActive ? (Number(document.getElementById('rAnfahrtBetrag').value)||0) : 0;
+    document.getElementById('rGesamt').textContent = fmtEUR(itemsSum + anfahrtBetrag);
+  }
+
+  document.getElementById('saveInvoiceBtn').addEventListener('click', function(){
+    var custId = document.getElementById('rKunde').value;
+    if(!custId){ showToast('Bitte einen Kunden wählen.'); return; }
+    var cleanItems = invItems.filter(function(it){ return it.leistung && Number(it.betrag)>0; })
+      .map(function(it){ return {horse:it.horse||'—', leistung:it.leistung, betrag:Number(it.betrag)}; });
+    if(cleanItems.length===0){ showToast('Bitte mindestens eine Leistung mit Betrag angeben.'); return; }
+
+    var km = Number(document.getElementById('rKm').value)||0;
+    var kmRate = Number(document.getElementById('rKmRate').value)||0;
+    var kmDeductOn = document.getElementById('rKmDeduct').checked;
+    var anfahrtOn = document.getElementById('rAnfahrtActive').checked;
+    var anfahrtBetrag = anfahrtOn ? (Number(document.getElementById('rAnfahrtBetrag').value)||0) : 0;
+    var status = document.getElementById('rStatus').value;
+
+    var inv = {
+      id: uid(),
+      number: document.getElementById('rNummer').value,
+      customerId: custId,
+      date: document.getElementById('rDatum').value || todayISO(),
+      items: cleanItems,
+      anfahrt: {active:anfahrtOn, betrag:anfahrtBetrag},
+      kmDeduction: kmDeductOn && km>0 ? {km:km, rate:kmRate, betrag: Math.round(km*kmRate*100)/100} : null,
+      status: status,
+      bezahltAm: status==='bezahlt' ? (document.getElementById('rBezahltAm').value||todayISO()) : null
+    };
+    data.invoices.push(inv);
+    data.settings.nextSeq += 1;
+    save();
+    showToast('Rechnung '+inv.number+' gespeichert.');
+    resetInvoiceForm();
+    renderInvoiceForm();
+  });
+
+  // ================= RECHNUNGEN LISTE =================
+  function renderInvoiceList(){
+    var tbody = document.getElementById('invTable');
+    if(data.invoices.length===0){
+      tbody.innerHTML = '<tr><td colspan="6" class="empty">Noch keine Rechnungen erstellt.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.invoices.slice().sort(function(a,b){return a.date<b.date?1:-1;}).map(function(i){
+      return '<tr><td>'+i.number+'</td><td>'+custName(i.customerId)+'</td><td>'+fmtDateDE(i.date)+'</td>'+
+        '<td><span class="badge '+(i.status==='bezahlt'?'paid':'open')+'">'+(i.status==='bezahlt'?'Bezahlt':'Offen')+'</span></td>'+
+        '<td class="right num">'+fmtEUR(invoiceTotal(i))+'</td>'+
+        '<td style="white-space:nowrap;">'+
+          '<button class="btn ghost" data-print="'+i.id+'" type="button">Drucken/PDF</button>'+
+          '<button class="btn ghost" data-toggle="'+i.id+'" type="button">'+(i.status==='bezahlt'?'Als offen markieren':'Als bezahlt markieren')+'</button>'+
+          '<button class="btn ghost" data-del="'+i.id+'" type="button">Löschen</button>'+
+        '</td></tr>';
+    }).join('');
+
+    tbody.querySelectorAll('[data-print]').forEach(function(b){
+      b.addEventListener('click', function(){ printInvoice(b.dataset.print); });
+    });
+    tbody.querySelectorAll('[data-toggle]').forEach(function(b){
+      b.addEventListener('click', function(){
+        var inv = data.invoices.find(function(i){return i.id===b.dataset.toggle;});
+        inv.status = inv.status==='bezahlt' ? 'offen' : 'bezahlt';
+        inv.bezahltAm = inv.status==='bezahlt' ? todayISO() : null;
+        save(); renderInvoiceList();
+      });
+    });
+    tbody.querySelectorAll('[data-del]').forEach(function(b){
+      b.addEventListener('click', function(){
+        if(!confirm('Rechnung wirklich löschen?')) return;
+        data.invoices = data.invoices.filter(function(i){return i.id!==b.dataset.del;});
+        save(); renderInvoiceList();
+      });
+    });
+  }
+
+  function printInvoice(id){
+    var inv = data.invoices.find(function(i){return i.id===id;});
+    if(!inv) return;
+    var cust = data.customers.find(function(c){return c.id===inv.customerId;});
+    var s = data.settings;
+    document.getElementById('pFrom').textContent =
+      (s.firma||s.inhaber||'') + "\n" + (s.inhaber&&s.firma?s.inhaber+"\n":"") + (s.strasse||'') + "\n" + (s.ort||'') +
+      (s.telefon? "\nTel. "+s.telefon:"") + (s.email? "\n"+s.email:"") + (s.iban? "\nIBAN "+s.iban:"");
+    document.getElementById('pTo').textContent = cust ? (cust.name+"\n"+(cust.strasse||'')+"\n"+(cust.plz||'')+" "+(cust.ort||'')) : '';
+    document.getElementById('pMeta').innerHTML =
+      '<div><strong>Rechnungsnummer:</strong> '+inv.number+'</div>'+
+      '<div><strong>Rechnungsdatum:</strong> '+fmtDateDE(inv.date)+'</div>'+
+      (s.steuernr? '<div><strong>Steuernummer:</strong> '+s.steuernr+'</div>':'');
+    document.getElementById('pItems').innerHTML = inv.items.map(function(it){
+      return '<tr><td>'+it.horse+'</td><td>'+it.leistung+'</td><td style="text-align:right;">'+fmtEUR(it.betrag)+'</td></tr>';
+    }).join('') + (inv.anfahrt && inv.anfahrt.active ? '<tr><td>—</td><td>Anfahrtspauschale</td><td style="text-align:right;">'+fmtEUR(inv.anfahrt.betrag)+'</td></tr>' : '');
+    document.getElementById('pTotal').textContent = 'Gesamtbetrag: '+fmtEUR(invoiceTotal(inv));
+    document.getElementById('pNote').textContent =
+      'Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.' +
+      (s.iban? '\nBitte überweisen Sie den Betrag auf IBAN '+s.iban+'.':'') +
+      '\nZahlbar ohne Abzug innerhalb von 14 Tagen.';
+    window.print();
+  }
+
+  // ================= AUSGABEN =================
+  function renderExpenses(){
+    document.getElementById('aDatum').value = document.getElementById('aDatum').value || todayISO();
+    var tbody = document.getElementById('expTable');
+    if(data.expenses.length===0){
+      tbody.innerHTML = '<tr><td colspan="5" class="empty">Noch keine Ausgaben erfasst.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.expenses.slice().sort(function(a,b){return a.date<b.date?1:-1;}).map(function(e){
+      return '<tr><td>'+fmtDateDE(e.date)+'</td><td>'+e.kategorie+'</td><td>'+(e.beschreibung||'')+'</td>'+
+        '<td class="right num">'+fmtEUR(e.betrag)+'</td>'+
+        '<td><button class="btn ghost" data-delexp="'+e.id+'" type="button">Löschen</button></td></tr>';
+    }).join('');
+    tbody.querySelectorAll('[data-delexp]').forEach(function(b){
+      b.addEventListener('click', function(){
+        data.expenses = data.expenses.filter(function(e){return e.id!==b.dataset.delexp;});
+        save(); renderExpenses();
+      });
+    });
+  }
+
+  document.getElementById('saveExpenseBtn').addEventListener('click', function(){
+    var betrag = Number(document.getElementById('aBetrag').value);
+    if(!betrag || betrag<=0){ showToast('Bitte einen gültigen Betrag angeben.'); return; }
+    data.expenses.push({
+      id: uid(),
+      date: document.getElementById('aDatum').value || todayISO(),
+      kategorie: document.getElementById('aKategorie').value,
+      beschreibung: document.getElementById('aBeschreibung').value.trim(),
+      betrag: betrag
+    });
+    save();
+    document.getElementById('aBetrag').value='';
+    document.getElementById('aBeschreibung').value='';
+    renderExpenses();
+    showToast('Ausgabe gespeichert.');
+  });
+
+  // ================= STEUER =================
+  function taxDataForYear(year){
+    var paidInv = data.invoices.filter(function(i){ return i.status==='bezahlt' && (i.bezahltAm||i.date||'').slice(0,4)===String(year); });
+    var einnahmen = paidInv.reduce(function(s,i){return s+invoiceTotal(i);},0);
+
+    var catSums = {};
+    data.expenses.filter(function(e){return (e.date||'').slice(0,4)===String(year);}).forEach(function(e){
+      catSums[e.kategorie] = (catSums[e.kategorie]||0) + Number(e.betrag||0);
+    });
+    var kmSum = 0;
+    data.invoices.filter(function(i){ return (i.date||'').slice(0,4)===String(year) && i.kmDeduction; }).forEach(function(i){
+      kmSum += Number(i.kmDeduction.betrag||0);
+    });
+    if(kmSum>0) catSums['Fahrtkosten / Kilometergeld'] = (catSums['Fahrtkosten / Kilometergeld']||0) + kmSum;
+
+    var ausgabenGesamt = Object.keys(catSums).reduce(function(s,k){return s+catSums[k];},0);
+    return {einnahmen:einnahmen, catSums:catSums, kmSum:kmSum, ausgabenGesamt:ausgabenGesamt, paidInv:paidInv};
+  }
+
+  function renderTax(){
+    var yearInput = document.getElementById('taxYear');
+    if(!yearInput.value) yearInput.value = new Date().getFullYear();
+    yearInput.oninput = renderTax;
+    var year = Number(yearInput.value);
+    var t = taxDataForYear(year);
+
+    document.getElementById('tEinnahmen').textContent = fmtEUR(t.einnahmen);
+    document.getElementById('tAusgaben').textContent = fmtEUR(t.ausgabenGesamt);
+    document.getElementById('tKm').textContent = fmtEUR(t.kmSum);
+    document.getElementById('tGewinn').textContent = fmtEUR(t.einnahmen - t.ausgabenGesamt);
+
+    var tbody = document.getElementById('taxCatTable');
+    var rows = Object.keys(t.catSums).map(function(k){
+      return '<tr><td>'+k+'</td><td class="right num">'+fmtEUR(t.catSums[k])+'</td></tr>';
+    });
+    rows.unshift('<tr><td><strong>Betriebseinnahmen</strong></td><td class="right num"><strong>'+fmtEUR(t.einnahmen)+'</strong></td></tr>');
+    tbody.innerHTML = rows.length ? rows.join('') : '<tr><td colspan="2" class="empty">Keine Daten für dieses Jahr.</td></tr>';
+  }
+
+  function csvEscape(v){
+    v = String(v==null?'':v);
+    if(/[;"\n]/.test(v)) v = '"'+v.replace(/"/g,'""')+'"';
+    return v;
+  }
+
+  function triggerDownload(filename, blob){
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+  }
+
+  function offerDownload(filename, csvString){
+    var blob = new Blob(["\uFEFF"+csvString], {type:"text/csv;charset=utf-8;"});
+    try{
+      triggerDownload(filename, blob);
+      showToast('Datei "'+filename+'" wurde heruntergeladen.');
+    }catch(err){
+      showToast('Download fehlgeschlagen: '+(err&&err.message?err.message:'unbekannter Fehler'));
+    }
+  }
+
+  document.getElementById('exportCatCsv').addEventListener('click', function(){
+    var year = Number(document.getElementById('taxYear').value)||new Date().getFullYear();
+    var t = taxDataForYear(year);
+    var rows = [["Kategorie","Betrag EUR"]];
+    rows.push(["Betriebseinnahmen (bezahlte Rechnungen)", t.einnahmen.toFixed(2).replace('.',',')]);
+    Object.keys(t.catSums).forEach(function(k){ rows.push([k, t.catSums[k].toFixed(2).replace('.',',')]); });
+    rows.push(["Betriebsausgaben gesamt", t.ausgabenGesamt.toFixed(2).replace('.',',')]);
+    rows.push(["Gewinn (EÜR)", (t.einnahmen-t.ausgabenGesamt).toFixed(2).replace('.',',')]);
+    var csv = rows.map(function(r){return r.map(csvEscape).join(';');}).join('\r\n');
+    offerDownload('EUR-Kategorien-Uebersicht-'+year+'.csv', csv);
+  });
+
+  document.getElementById('copyCatBtn').addEventListener('click', async function(){
+    var year = Number(document.getElementById('taxYear').value)||new Date().getFullYear();
+    var t = taxDataForYear(year);
+    var lines = [];
+    lines.push('EÜR-Übersicht '+year);
+    lines.push('Betriebseinnahmen (bezahlte Rechnungen)\t'+t.einnahmen.toFixed(2).replace('.',',')+' €');
+    Object.keys(t.catSums).forEach(function(k){ lines.push(k+'\t'+t.catSums[k].toFixed(2).replace('.',',')+' €'); });
+    lines.push('Betriebsausgaben gesamt\t'+t.ausgabenGesamt.toFixed(2).replace('.',',')+' €');
+    lines.push('Gewinn (EÜR)\t'+(t.einnahmen-t.ausgabenGesamt).toFixed(2).replace('.',',')+' €');
+    var text = lines.join('\n');
+    try{
+      await navigator.clipboard.writeText(text);
+      showToast('Übersicht kopiert — jetzt einfügen (Strg+V / Cmd+V).');
+    }catch(err){
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+      document.body.appendChild(ta); ta.select();
+      try{ document.execCommand('copy'); showToast('Übersicht kopiert — jetzt einfügen (Strg+V / Cmd+V).'); }
+      catch(e2){ showToast('Kopieren nicht möglich — bitte CSV-Datei laden.'); }
+      document.body.removeChild(ta);
+    }
+  });
+
+  document.getElementById('exportBankCsv').addEventListener('click', function(){
+    var year = Number(document.getElementById('taxYear').value)||new Date().getFullYear();
+    var rows = [["Buchungstag","Verwendungszweck","Betrag"]];
+    data.invoices.filter(function(i){return i.status==='bezahlt' && (i.bezahltAm||i.date||'').slice(0,4)===String(year);}).forEach(function(i){
+      rows.push([fmtDateDE(i.bezahltAm||i.date), 'Rechnung '+i.number+' - '+custName(i.customerId), invoiceTotal(i).toFixed(2).replace('.',',')]);
+    });
+    data.expenses.filter(function(e){return (e.date||'').slice(0,4)===String(year);}).forEach(function(e){
+      rows.push([fmtDateDE(e.date), e.kategorie+(e.beschreibung?' - '+e.beschreibung:''), '-'+Number(e.betrag).toFixed(2).replace('.',',')]);
+    });
+    data.invoices.filter(function(i){return (i.date||'').slice(0,4)===String(year) && i.kmDeduction;}).forEach(function(i){
+      rows.push([fmtDateDE(i.date), 'Kilometergeld '+i.kmDeduction.km+' km - '+custName(i.customerId), '-'+Number(i.kmDeduction.betrag).toFixed(2).replace('.',',')]);
+    });
+    var csv = rows.map(function(r){return r.map(csvEscape).join(';');}).join('\r\n');
+    offerDownload('Bankumsaetze-Import-'+year+'.csv', csv);
+  });
+
+  document.getElementById('exportDetailCsv').addEventListener('click', function(){
+    var year = Number(document.getElementById('taxYear').value)||new Date().getFullYear();
+    var rows = [["Typ","Datum","Nummer/Kategorie","Kunde/Beschreibung","Status","Betrag EUR"]];
+    data.invoices.filter(function(i){return (i.date||'').slice(0,4)===String(year);}).forEach(function(i){
+      rows.push(["Rechnung", fmtDateDE(i.date), i.number, custName(i.customerId), i.status, invoiceTotal(i).toFixed(2).replace('.',',')]);
+      if(i.kmDeduction){
+        rows.push(["Betriebsausgabe", fmtDateDE(i.date), "Kilometergeld", i.kmDeduction.km+" km x "+i.kmDeduction.rate+" €", "-", i.kmDeduction.betrag.toFixed(2).replace('.',',')]);
+      }
+    });
+    data.expenses.filter(function(e){return (e.date||'').slice(0,4)===String(year);}).forEach(function(e){
+      rows.push(["Ausgabe", fmtDateDE(e.date), e.kategorie, e.beschreibung||"", "-", e.betrag.toFixed(2).replace('.',',')]);
+    });
+    var csv = rows.map(function(r){return r.map(csvEscape).join(';');}).join('\r\n');
+    offerDownload('Detail-Journal-'+year+'.csv', csv);
+  });
+
+  // ================= EINSTELLUNGEN =================
+  function renderSettings(){
+    var s = data.settings;
+    document.getElementById('sFirma').value = s.firma||'';
+    document.getElementById('sInhaber').value = s.inhaber||'';
+    document.getElementById('sStrasse').value = s.strasse||'';
+    document.getElementById('sOrt').value = s.ort||'';
+    document.getElementById('sTelefon').value = s.telefon||'';
+    document.getElementById('sEmail').value = s.email||'';
+    document.getElementById('sIban').value = s.iban||'';
+    document.getElementById('sSteuernr').value = s.steuernr||'';
+    document.getElementById('sKmRate').value = s.kmRate;
+    renderServiceRows();
+  }
+
+  document.getElementById('saveSettingsBtn').addEventListener('click', function(){
+    var s = data.settings;
+    s.firma = document.getElementById('sFirma').value.trim();
+    s.inhaber = document.getElementById('sInhaber').value.trim();
+    s.strasse = document.getElementById('sStrasse').value.trim();
+    s.ort = document.getElementById('sOrt').value.trim();
+    s.telefon = document.getElementById('sTelefon').value.trim();
+    s.email = document.getElementById('sEmail').value.trim();
+    s.iban = document.getElementById('sIban').value.trim();
+    s.steuernr = document.getElementById('sSteuernr').value.trim();
+    save();
+    showToast('Firmendaten gespeichert.');
+  });
+
+  document.getElementById('saveKmRateBtn').addEventListener('click', function(){
+    data.settings.kmRate = Number(document.getElementById('sKmRate').value)||0;
+    save();
+    showToast('Kilometersatz gespeichert.');
+  });
+
+  function renderServiceRows(){
+    var wrap = document.getElementById('serviceRows');
+    wrap.innerHTML = data.settings.services.map(function(sv,idx){
+      return '<div class="item-row" style="grid-template-columns:2fr 1fr auto;">'+
+        '<div class="field"><input class="sv-name" value="'+(sv.name||'').replace(/"/g,'&quot;')+'" placeholder="Leistungsname"></div>'+
+        '<div class="field"><input class="sv-preis" type="number" min="0" step="0.5" value="'+sv.preis+'" placeholder="Preis"></div>'+
+        '<button class="btn ghost del" type="button">✕</button>'+
+        '</div>';
+    }).join('');
+    wrap.querySelectorAll('.item-row').forEach(function(row,idx){
+      row.querySelector('.del').addEventListener('click', function(){
+        data.settings.services.splice(idx,1); renderServiceRows();
+      });
+    });
+  }
+  document.getElementById('addServiceBtn').addEventListener('click', function(){
+    data.settings.services.push({name:'', preis:0});
+    renderServiceRows();
+  });
+  document.getElementById('saveServicesBtn').addEventListener('click', function(){
+    var wrap = document.getElementById('serviceRows');
+    var names = wrap.querySelectorAll('.sv-name');
+    var preise = wrap.querySelectorAll('.sv-preis');
+    var list = [];
+    for(var i=0;i<names.length;i++){
+      var n = names[i].value.trim();
+      if(n) list.push({name:n, preis:Number(preise[i].value)||0});
+    }
+    data.settings.services = list;
+    save();
+    showToast('Leistungen gespeichert.');
+  });
+
+  document.getElementById('backupBtn').addEventListener('click', function(){
+    var json = JSON.stringify(data, null, 2);
+    var blob = new Blob([json], {type:"application/json"});
+    try{
+      triggerDownload('hufbuch-backup-'+todayISO()+'.json', blob);
+      showToast('Backup heruntergeladen.');
+    }catch(err){
+      showToast('Backup fehlgeschlagen.');
+    }
+  });
+
+  document.getElementById('restoreFile').addEventListener('change', function(e){
+    var file = e.target.files[0];
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(){
+      try{
+        var parsed = JSON.parse(reader.result);
+        if(!parsed.settings || !parsed.customers){ throw new Error('ungültiges Format'); }
+        if(!confirm('Aktuelle Daten werden durch das Backup ersetzt. Fortfahren?')) return;
+        data = parsed;
+        save();
+        showToast('Backup wiederhergestellt.');
+        renderAll();
+      }catch(err){
+        showToast('Backup konnte nicht gelesen werden.');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  });
+
+  function renderAll(){
+    renderDashboard();
+    renderCustomers();
+    renderInvoiceForm();
+    renderInvoiceList();
+    renderExpenses();
+    renderTax();
+    renderSettings();
+  }
+
+  renderAll();
+
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register('service-worker.js').catch(function(){ /* offline-Funktion optional */ });
+    });
+  }
+})();
+</script>
+
+</body>
+</html>
