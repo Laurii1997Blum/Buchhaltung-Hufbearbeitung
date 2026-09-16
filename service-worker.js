@@ -1,10 +1,11 @@
-const CACHE_NAME = "hufbuch-cache-v2";
+const CACHE_NAME = "hufbuch-cache-v3";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./manifest.json",
   "./icons/icon.svg",
   "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
+  "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
   "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.2/jszip.min.js"
 ];
 

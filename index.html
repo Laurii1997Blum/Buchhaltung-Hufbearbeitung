@@ -163,41 +163,44 @@ tr:last-child td{border-bottom:none;}
 .pill{background:var(--paper2); border:1px solid var(--line); border-radius:16px; padding:4px 10px 4px 12px; font-size:12.5px; display:flex; align-items:center; gap:6px;}
 .pill button{background:none; border:none; color:var(--ink-soft); cursor:pointer; font-size:13px; line-height:1;}
 
-/* print invoice */
-#print-area{display:none;}
+/* print / pdf invoice — layout is always "live" (off-screen) so both
+   window.print() and the html2canvas-based PDF export use the exact same markup */
+#print-area{
+  position:fixed; left:-99999px; top:0; width:794px;
+  padding:50px 60px; color:#111; background:#fff;
+  font-family: Georgia, 'Times New Roman', serif;
+  box-sizing:border-box;
+}
+.pinv-logo-wrap{text-align:center; margin-bottom:8px;}
+.pinv-logo-wrap img{max-height:110px; max-width:220px;}
+.pinv-firmname{text-align:center; font-size:14px; letter-spacing:0.22em; text-transform:uppercase; margin-top:10px; font-family: Georgia, serif;}
+.pinv-inhaber{text-align:center; font-size:13px; font-style:italic; margin-top:2px; color:#333;}
+
+.inv-head{display:flex; justify-content:space-between; align-items:flex-start; margin:46px 0 40px;}
+.inv-to{font-size:12.5px; line-height:1.6;}
+.inv-to .lbl{font-weight:700; letter-spacing:0.08em; font-size:11px; margin-bottom:6px;}
+.inv-nr{text-align:right; font-size:12.5px; line-height:1.6;}
+
+table.pinv{width:100%; border-collapse:collapse; font-size:12.5px; margin-top:6px;}
+table.pinv th{border-bottom:1.3px solid #222; text-align:left; padding:0 4px 8px; font-size:11px; letter-spacing:0.06em; text-transform:uppercase; font-weight:700;}
+table.pinv th.num, table.pinv td.num{text-align:right;}
+table.pinv td{padding:10px 4px; border-bottom:1px solid #ddd; vertical-align:top; line-height:1.5;}
+table.pinv td .sub{color:#666; font-size:11.5px; display:block;}
+
+.pinv-total-row{display:flex; justify-content:flex-end; margin-top:14px; border-top:1.3px solid #222; padding-top:10px;}
+.pinv-total-row .tl{font-weight:700; letter-spacing:0.08em; font-size:11.5px; margin-right:26px;}
+.pinv-total-row .tv{font-weight:700; font-size:14px;}
+
+.pinv-note{margin-top:40px; font-size:11px; color:#444; white-space:pre-line; line-height:1.5;}
+
+.pinv-pay{display:flex; justify-content:space-between; margin-top:26px; font-size:11.5px; line-height:1.7;}
+.pinv-pay .lbl{font-weight:700; letter-spacing:0.06em; font-size:10.5px; margin-bottom:4px;}
+.pinv-pay .right{text-align:right;}
+
 @media print{
   body *{visibility:hidden;}
   #print-area, #print-area *{visibility:visible;}
-  #print-area{
-    display:block; position:absolute; top:0; left:0; width:100%;
-    padding:50px 60px; color:#111; background:#fff;
-    font-family: Georgia, 'Times New Roman', serif;
-  }
-  .pinv-logo-wrap{text-align:center; margin-bottom:8px;}
-  .pinv-logo-wrap img{max-height:110px; max-width:220px;}
-  .pinv-firmname{text-align:center; font-size:14px; letter-spacing:0.22em; text-transform:uppercase; margin-top:10px; font-family: Georgia, serif;}
-  .pinv-inhaber{text-align:center; font-size:13px; font-style:italic; margin-top:2px; color:#333;}
-
-  .inv-head{display:flex; justify-content:space-between; align-items:flex-start; margin:46px 0 40px;}
-  .inv-to{font-size:12.5px; line-height:1.6;}
-  .inv-to .lbl{font-weight:700; letter-spacing:0.08em; font-size:11px; margin-bottom:6px;}
-  .inv-nr{text-align:right; font-size:12.5px; line-height:1.6;}
-
-  table.pinv{width:100%; border-collapse:collapse; font-size:12.5px; margin-top:6px;}
-  table.pinv th{border-bottom:1.3px solid #222; text-align:left; padding:0 4px 8px; font-size:11px; letter-spacing:0.06em; text-transform:uppercase; font-weight:700;}
-  table.pinv th.num, table.pinv td.num{text-align:right;}
-  table.pinv td{padding:10px 4px; border-bottom:1px solid #ddd; vertical-align:top; line-height:1.5;}
-  table.pinv td .sub{color:#666; font-size:11.5px; display:block;}
-
-  .pinv-total-row{display:flex; justify-content:flex-end; margin-top:14px; border-top:1.3px solid #222; padding-top:10px;}
-  .pinv-total-row .tl{font-weight:700; letter-spacing:0.08em; font-size:11.5px; margin-right:26px;}
-  .pinv-total-row .tv{font-weight:700; font-size:14px;}
-
-  .pinv-note{margin-top:40px; font-size:11px; color:#444; white-space:pre-line; line-height:1.5;}
-
-  .pinv-pay{display:flex; justify-content:space-between; margin-top:26px; font-size:11.5px; line-height:1.7;}
-  .pinv-pay .lbl{font-weight:700; letter-spacing:0.06em; font-size:10.5px; margin-bottom:4px;}
-  .pinv-pay .right{text-align:right;}
+  #print-area{position:absolute; left:0; top:0; width:100%;}
 }
 </style>
 </head>
@@ -241,7 +244,7 @@ tr:last-child td{border-bottom:none;}
     <!-- KUNDEN -->
     <section class="tab-page hidden" id="tab-kunden">
       <div class="panel">
-        <h2>Neuen Kunden anlegen</h2>
+        <h2 id="custFormTitle">Neuen Kunden anlegen</h2>
         <div class="hint">Einmal anlegen — bei jeder künftigen Rechnung wird alles automatisch vorausgefüllt, inklusive Anfahrt.</div>
         <div class="grid grid-2">
           <div class="field"><label>Name / Stallname</label><input id="kName" placeholder="z. B. Anna Meier / Hof Sonnenweide"></div>
@@ -256,7 +259,10 @@ tr:last-child td{border-bottom:none;}
           <button class="btn secondary small" id="kPferdAdd" type="button">Hinzufügen</button>
         </div>
         <div class="pill-list" id="kPferdList"></div>
-        <button class="btn" style="margin-top:18px;" id="saveCustomerBtn">Kunde speichern</button>
+        <div style="display:flex; gap:10px; margin-top:18px;">
+          <button class="btn" id="saveCustomerBtn">Kunde speichern</button>
+          <button class="btn secondary hidden" id="cancelEditCustomerBtn" type="button">Abbrechen</button>
+        </div>
       </div>
 
       <div class="panel">
@@ -429,7 +435,10 @@ tr:last-child td{border-bottom:none;}
           <button class="btn ghost small" id="sLogoRemove" type="button">Entfernen</button>
         </div>
         <div class="hint" style="margin-top:16px;">Als Kleinunternehmer (§19 UStG) wird auf jeder Rechnung automatisch der gesetzliche Hinweis ergänzt — keine Umsatzsteuer wird ausgewiesen.</div>
-        <button class="btn" style="margin-top:16px;" id="saveSettingsBtn">Speichern</button>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn" style="margin-top:16px;" id="saveSettingsBtn">Speichern</button>
+          <button class="btn secondary" style="margin-top:16px;" id="downloadSampleBtn" type="button">Proberechnung erzeugen (PDF)</button>
+        </div>
       </div>
 
 
@@ -496,6 +505,7 @@ tr:last-child td{border-bottom:none;}
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.2/jszip.min.js"></script>
 <script>
 (function(){
@@ -734,6 +744,8 @@ tr:last-child td{border-bottom:none;}
 
   // ================= KUNDEN =================
   var pendingHorses = [];
+  var editingCustomerId = null;
+
   function renderCustomers(){
     document.getElementById('kPferdList').innerHTML = pendingHorses.map(function(h,idx){
       return '<span class="pill">'+h+' <button data-rmh="'+idx+'" type="button">×</button></span>';
@@ -751,16 +763,53 @@ tr:last-child td{border-bottom:none;}
     tbody.innerHTML = data.customers.map(function(c){
       return '<tr><td>'+c.name+'</td><td>'+(c.ort||'')+'</td><td>'+(c.horses||[]).map(function(h){return h.name;}).join(', ')+'</td>'+
         '<td class="right num">'+(c.kmDefault||0)+' km</td>'+
-        '<td><button class="btn ghost" data-delcust="'+c.id+'" type="button">Löschen</button></td></tr>';
+        '<td style="white-space:nowrap;"><button class="btn ghost" data-editcust="'+c.id+'" type="button">Bearbeiten</button>'+
+        '<button class="btn ghost" data-delcust="'+c.id+'" type="button">Löschen</button></td></tr>';
     }).join('');
+    tbody.querySelectorAll('[data-editcust]').forEach(function(b){
+      b.addEventListener('click', function(){ startEditCustomer(b.dataset.editcust); });
+    });
     tbody.querySelectorAll('[data-delcust]').forEach(function(b){
       b.addEventListener('click', function(){
         if(!confirm('Kunde wirklich löschen? Bereits erstellte Rechnungen bleiben erhalten.')) return;
         data.customers = data.customers.filter(function(c){return c.id!==b.dataset.delcust;});
+        if(editingCustomerId===b.dataset.delcust) cancelEditCustomer();
         save(); renderCustomers();
       });
     });
   }
+
+  function startEditCustomer(id){
+    var c = data.customers.find(function(c){return c.id===id;});
+    if(!c) return;
+    editingCustomerId = id;
+    document.getElementById('custFormTitle').textContent = 'Kunde bearbeiten: '+c.name;
+    document.getElementById('kName').value = c.name||'';
+    document.getElementById('kStrasse').value = c.strasse||'';
+    document.getElementById('kPlz').value = c.plz||'';
+    document.getElementById('kOrt').value = c.ort||'';
+    document.getElementById('kKm').value = c.kmDefault||'';
+    pendingHorses = (c.horses||[]).map(function(h){ return h.name; });
+    document.getElementById('saveCustomerBtn').textContent = 'Änderungen speichern';
+    document.getElementById('cancelEditCustomerBtn').classList.remove('hidden');
+    renderCustomers();
+    document.getElementById('kName').scrollIntoView({behavior:'smooth', block:'center'});
+  }
+
+  function cancelEditCustomer(){
+    editingCustomerId = null;
+    document.getElementById('custFormTitle').textContent = 'Neuen Kunden anlegen';
+    document.getElementById('kName').value='';
+    document.getElementById('kStrasse').value='';
+    document.getElementById('kPlz').value='';
+    document.getElementById('kOrt').value='';
+    document.getElementById('kKm').value='';
+    pendingHorses = [];
+    document.getElementById('saveCustomerBtn').textContent = 'Kunde speichern';
+    document.getElementById('cancelEditCustomerBtn').classList.add('hidden');
+    renderCustomers();
+  }
+  document.getElementById('cancelEditCustomerBtn').addEventListener('click', cancelEditCustomer);
 
   document.getElementById('kPferdAdd').addEventListener('click', addPendingHorse);
   document.getElementById('kPferdInput').addEventListener('keydown', function(e){
@@ -778,13 +827,37 @@ tr:last-child td{border-bottom:none;}
   document.getElementById('saveCustomerBtn').addEventListener('click', function(){
     var name = document.getElementById('kName').value.trim();
     if(!name){ showToast('Bitte einen Namen eingeben.'); return; }
+    var strasse = document.getElementById('kStrasse').value.trim();
+    var plz = document.getElementById('kPlz').value.trim();
+    var ort = document.getElementById('kOrt').value.trim();
+    var kmDefault = Number(document.getElementById('kKm').value)||0;
+
+    if(editingCustomerId){
+      var existing = data.customers.find(function(c){return c.id===editingCustomerId;});
+      if(existing){
+        var oldHorseIds = {};
+        (existing.horses||[]).forEach(function(h){ oldHorseIds[h.name]=h.id; });
+        existing.name = name;
+        existing.strasse = strasse;
+        existing.plz = plz;
+        existing.ort = ort;
+        existing.kmDefault = kmDefault;
+        // bestehende Pferde-IDs beibehalten (falls Name unverändert), damit Verknüpfungen stabil bleiben
+        existing.horses = pendingHorses.map(function(h){ return {id: oldHorseIds[h] || uid(), name:h}; });
+        save();
+        showToast('Kunde aktualisiert.');
+        cancelEditCustomer();
+      }
+      return;
+    }
+
     var c = {
       id: uid(),
       name: name,
-      strasse: document.getElementById('kStrasse').value.trim(),
-      plz: document.getElementById('kPlz').value.trim(),
-      ort: document.getElementById('kOrt').value.trim(),
-      kmDefault: Number(document.getElementById('kKm').value)||0,
+      strasse: strasse,
+      plz: plz,
+      ort: ort,
+      kmDefault: kmDefault,
       horses: pendingHorses.map(function(h){ return {id:uid(), name:h}; })
     };
     data.customers.push(c);
@@ -1001,14 +1074,9 @@ tr:last-child td{border-bottom:none;}
     });
   }
 
-  function printInvoice(id){
-    var inv = data.invoices.find(function(i){return i.id===id;});
-    if(!inv) return;
-    var cust = data.customers.find(function(c){return c.id===inv.customerId;});
-    var s = data.settings;
-
+  function populatePrintArea(inv, cust, s){
     var logoWrap = document.getElementById('pLogoWrap');
-    logoWrap.innerHTML = s.logoDataUrl ? '<img src="'+s.logoDataUrl+'" alt="Logo">' : '';
+    logoWrap.innerHTML = s.logoDataUrl ? '<img src="'+s.logoDataUrl+'" alt="Logo" crossorigin="anonymous">' : '';
     document.getElementById('pFirmname').textContent = s.firma || '';
     document.getElementById('pInhaber').textContent = s.inhaber || '';
 
@@ -1043,146 +1111,101 @@ tr:last-child td{border-bottom:none;}
       (s.ort? s.ort+'<br>':'') +
       (s.telefon? 'Telefon: '+s.telefon+'<br>':'') +
       (s.email? 'E-Mail: '+s.email:'');
-
-    window.print();
   }
 
-  function loadImageDims(dataUrl){
-    return new Promise(function(resolve){
-      var img = new Image();
-      img.onload = function(){ resolve({w:img.naturalWidth, h:img.naturalHeight}); };
-      img.onerror = function(){ resolve(null); };
-      img.src = dataUrl;
-    });
+  function waitForPrintAreaImages(){
+    var imgs = document.querySelectorAll('#print-area img');
+    return Promise.all(Array.prototype.map.call(imgs, function(img){
+      if(img.complete) return Promise.resolve();
+      return new Promise(function(resolve){
+        img.onload = resolve; img.onerror = resolve;
+      });
+    }));
   }
 
-  async function downloadInvoicePdf(id){
-    if(typeof window.jspdf === 'undefined'){ showToast('PDF-Bibliothek konnte nicht geladen werden.'); return; }
+  function printInvoice(id){
     var inv = data.invoices.find(function(i){return i.id===id;});
     if(!inv) return;
     var cust = data.customers.find(function(c){return c.id===inv.customerId;});
-    var s = data.settings;
-
-    var doc = new window.jspdf.jsPDF({unit:'mm', format:'a4'});
-    var pageW = 210, marginL = 25, marginR = 25, contentR = pageW - marginR;
-    var y = 24;
-
-    if(s.logoDataUrl){
-      try{
-        var dims = await loadImageDims(s.logoDataUrl);
-        var fmt = /png/i.test(s.logoDataUrl) ? 'PNG' : (/svg/i.test(s.logoDataUrl) ? null : 'JPEG');
-        if(fmt && dims){
-          var maxW = 34, maxH = 26;
-          var ratio = Math.min(maxW/dims.w, maxH/dims.h);
-          var w = dims.w*ratio, h = dims.h*ratio;
-          doc.addImage(s.logoDataUrl, fmt, (pageW-w)/2, y, w, h);
-          y += h + 6;
-        }
-      }catch(e){ /* Logo überspringen, falls Format nicht unterstützt wird */ }
-    }
-
-    if(s.firma){
-      doc.setFont('times','bold'); doc.setFontSize(12);
-      doc.text(s.firma.toUpperCase().split('').join('\u200a\u200a'), pageW/2, y, {align:'center'});
-      y += 6;
-    }
-    if(s.inhaber){
-      doc.setFont('times','italic'); doc.setFontSize(11);
-      doc.text(s.inhaber, pageW/2, y, {align:'center'});
-      y += 6;
-    }
-
-    y += 14;
-    var headTopY = y;
-    doc.setFont('times','bold'); doc.setFontSize(9);
-    doc.text('RECHNUNG AN:', marginL, y);
-    doc.setFont('times','normal'); doc.setFontSize(10.5);
-    var toLines = cust ? [cust.name, cust.strasse||'', ((cust.plz||'')+' '+(cust.ort||'')).trim()].filter(Boolean) : [];
-    var ty = y + 6;
-    toLines.forEach(function(l){ doc.text(l, marginL, ty); ty += 5; });
-
-    doc.setFont('times','normal'); doc.setFontSize(10.5);
-    doc.text('Rechnung Nr. '+inv.number, contentR, headTopY, {align:'right'});
-    doc.text(fmtDateDE(inv.date), contentR, headTopY+5, {align:'right'});
-    var metaY = headTopY+10;
-    if(s.steuernr){ doc.text('Steuernr.: '+s.steuernr, contentR, metaY, {align:'right'}); metaY += 5; }
-
-    y = Math.max(ty, metaY) + 12;
-
-    var colDesc = marginL, colPreis = 145, colAnzahl = 168, colSumme = contentR;
-    doc.setDrawColor(30,30,30); doc.setLineWidth(0.4);
-    doc.line(marginL, y, contentR, y);
-    y += 5;
-    doc.setFont('times','bold'); doc.setFontSize(8.5);
-    doc.text('BESCHREIBUNG', colDesc, y);
-    doc.text('PREIS', colPreis, y, {align:'right'});
-    doc.text('ANZAHL', colAnzahl, y, {align:'right'});
-    doc.text('SUMME', colSumme, y, {align:'right'});
-    y += 2.5;
-    doc.setLineWidth(0.25);
-    doc.line(marginL, y, contentR, y);
-    y += 6;
-
-    doc.setFont('times','normal'); doc.setFontSize(10);
-    var rows = inv.items.slice();
-    if(inv.anfahrt && inv.anfahrt.active){
-      rows.push({leistung:'Anfahrtspauschale', horse:'', preis:inv.anfahrt.betrag, menge:1, betrag:inv.anfahrt.betrag});
-    }
-    rows.forEach(function(it){
-      if(y > 265){ doc.addPage(); y = 24; }
-      doc.text(String(it.leistung||''), colDesc, y);
-      doc.text(fmtEUR(it.preis), colPreis, y, {align:'right'});
-      doc.text(String(it.menge||1), colAnzahl, y, {align:'right'});
-      doc.text(fmtEUR(it.betrag), colSumme, y, {align:'right'});
-      y += 5.5;
-      if(it.horse && it.horse!=='—'){
-        doc.setFontSize(8.5); doc.setTextColor(110,110,110);
-        doc.text(it.horse, colDesc, y);
-        doc.setFontSize(10); doc.setTextColor(0,0,0);
-        y += 5;
-      }
-      doc.setDrawColor(210,210,210); doc.setLineWidth(0.2);
-      doc.line(marginL, y-2.5, contentR, y-2.5);
-    });
-
-    y += 3;
-    doc.setDrawColor(30,30,30); doc.setLineWidth(0.4);
-    doc.line(marginL, y, contentR, y);
-    y += 7;
-    doc.setFont('times','bold'); doc.setFontSize(9);
-    doc.text('TOTAL', colAnzahl, y, {align:'right'});
-    doc.setFontSize(11);
-    doc.text(fmtEUR(invoiceTotal(inv)), colSumme, y, {align:'right'});
-
-    y += 16;
-    doc.setFont('times','normal'); doc.setFontSize(8.5); doc.setTextColor(70,70,70);
-    doc.text('Hinweis: Gemäß § 19 UStG enthält der ausgewiesene Betrag keine Umsatzsteuer.', marginL, y);
-    y += 4.5;
-    doc.text('Zahlbar innerhalb von 14 Tagen', marginL, y);
-    doc.setTextColor(0,0,0);
-
-    y += 14;
-    doc.setFont('times','bold'); doc.setFontSize(8);
-    doc.text('ZAHLUNGSINFORMATIONEN', marginL, y);
-    doc.setFont('times','normal'); doc.setFontSize(9);
-    var payLeft = [];
-    if(s.empfaenger) payLeft.push('Empfänger: '+s.empfaenger);
-    if(s.iban) payLeft.push('IBAN: '+s.iban);
-    if(s.bic) payLeft.push('BIC: '+s.bic);
-    if(s.bank) payLeft.push('Bank: '+s.bank);
-    var payRight = [];
-    if(s.strasse) payRight.push(s.strasse);
-    if(s.ort) payRight.push(s.ort);
-    if(s.telefon) payRight.push('Telefon: '+s.telefon);
-    if(s.email) payRight.push('E-Mail: '+s.email);
-    var py = y + 5;
-    payLeft.forEach(function(l){ doc.text(l, marginL, py); py += 4.6; });
-    var py2 = y + 5;
-    payRight.forEach(function(l){ doc.text(l, contentR, py2, {align:'right'}); py2 += 4.6; });
-
-    var blob = doc.output('blob');
-    downloadBlob('Rechnung-'+inv.number+'.pdf', blob);
+    populatePrintArea(inv, cust, data.settings);
+    waitForPrintAreaImages().then(function(){ window.print(); });
   }
+
+  // ---------- PDF-Erzeugung: exakter Screenshot der Druckvorlage (html2canvas) ----------
+  async function renderPrintAreaToPdfBlob(){
+    if(typeof window.jspdf === 'undefined' || typeof window.html2canvas === 'undefined'){
+      showToast('PDF-Bibliothek konnte nicht geladen werden.');
+      return null;
+    }
+    await waitForPrintAreaImages();
+    var el = document.getElementById('print-area');
+    var canvas = await window.html2canvas(el, {scale:2, useCORS:true, backgroundColor:'#ffffff'});
+    var imgData = canvas.toDataURL('image/jpeg', 0.95);
+
+    var pdfW = 210, pdfH = 297;
+    var doc = new window.jspdf.jsPDF({unit:'mm', format:'a4'});
+    var imgWmm = pdfW;
+    var imgHmm = (canvas.height * imgWmm) / canvas.width;
+
+    if(imgHmm <= pdfH){
+      doc.addImage(imgData, 'JPEG', 0, 0, imgWmm, imgHmm);
+    } else {
+      // mehrseitig: Bild in Seiten-große Scheiben schneiden
+      var pageCanvasHeightPx = Math.floor((pdfH * canvas.width) / imgWmm);
+      var offsetPx = 0;
+      var first = true;
+      while(offsetPx < canvas.height){
+        var sliceHeightPx = Math.min(pageCanvasHeightPx, canvas.height - offsetPx);
+        var sliceCanvas = document.createElement('canvas');
+        sliceCanvas.width = canvas.width;
+        sliceCanvas.height = sliceHeightPx;
+        var ctx = sliceCanvas.getContext('2d');
+        ctx.drawImage(canvas, 0, offsetPx, canvas.width, sliceHeightPx, 0, 0, canvas.width, sliceHeightPx);
+        var sliceData = sliceCanvas.toDataURL('image/jpeg', 0.95);
+        var sliceHmm = (sliceHeightPx * imgWmm) / canvas.width;
+        if(!first) doc.addPage();
+        doc.addImage(sliceData, 'JPEG', 0, 0, imgWmm, sliceHmm);
+        offsetPx += sliceHeightPx;
+        first = false;
+      }
+    }
+    return doc.output('blob');
+  }
+
+  async function downloadInvoicePdf(id){
+    var inv = data.invoices.find(function(i){return i.id===id;});
+    if(!inv) return;
+    var cust = data.customers.find(function(c){return c.id===inv.customerId;});
+    populatePrintArea(inv, cust, data.settings);
+    var blob = await renderPrintAreaToPdfBlob();
+    if(blob) downloadBlob('Rechnung-'+inv.number+'.pdf', blob);
+  }
+
+  async function downloadSampleInvoicePdf(){
+    var sampleCust = {
+      name: 'Myrielle Hely',
+      strasse: 'Auwaldstraße 4',
+      plz: '76661',
+      ort: 'Philippsburg'
+    };
+    var sampleInv = {
+      number: 'TEST-001',
+      date: todayISO(),
+      items: [
+        {leistung:'Klebebeschlag Kaltblut', horse:'Kaltblut hinten', preis:200, menge:1, betrag:200},
+        {leistung:'Barhufbearbeitung', horse:'', preis:45, menge:1, betrag:45}
+      ],
+      anfahrt:{active:false, betrag:0}
+    };
+    populatePrintArea(sampleInv, sampleCust, data.settings);
+    var blob = await renderPrintAreaToPdfBlob();
+    if(blob){
+      downloadBlob('Proberechnung.pdf', blob);
+      showToast('Proberechnung erzeugt — prüfe Logo, Firmendaten und Layout.');
+    }
+  }
+  var sampleBtn = document.getElementById('downloadSampleBtn');
+  if(sampleBtn) sampleBtn.addEventListener('click', downloadSampleInvoicePdf);
 
 
   // ================= AUSGABEN =================
