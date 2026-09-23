@@ -275,12 +275,12 @@ table.pinv td .sub{color:#666; font-size:11.5px; display:block;}
     <!-- RECHNUNG NEU -->
     <section class="tab-page hidden" id="tab-rechnung-neu">
       <div class="panel">
-        <h2>Neue Rechnung</h2>
+        <h2 id="invFormTitle">Neue Rechnung</h2>
         <div class="hint">Kunde wählen — Anfahrt und Adresse werden automatisch übernommen.</div>
         <div class="grid grid-3">
           <div class="field"><label>Kunde</label><select id="rKunde"></select></div>
           <div class="field"><label>Rechnungsdatum</label><input id="rDatum" type="date"></div>
-          <div class="field"><label>Rechnungsnummer</label><input id="rNummer" readonly></div>
+          <div class="field"><label>Rechnungsnummer (automatisch, per Hand änderbar)</label><input id="rNummer"></div>
         </div>
 
         <div class="section-title">Leistungen</div>
@@ -312,9 +312,12 @@ table.pinv td .sub{color:#666; font-size:11.5px; display:block;}
           <div class="field hidden" id="rBezahltAmWrap"><label>Bezahlt am</label><input id="rBezahltAm" type="date"></div>
         </div>
 
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:22px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:22px; flex-wrap:wrap; gap:12px;">
           <div style="font-family:'Fraunces',serif; font-size:22px;">Summe: <span class="num" id="rGesamt">0,00 €</span></div>
-          <button class="btn" id="saveInvoiceBtn">Rechnung speichern</button>
+          <div style="display:flex; gap:10px;">
+            <button class="btn secondary hidden" id="cancelEditInvoiceBtn" type="button">Abbrechen</button>
+            <button class="btn" id="saveInvoiceBtn">Rechnung speichern</button>
+          </div>
         </div>
       </div>
     </section>
@@ -330,7 +333,7 @@ table.pinv td .sub{color:#666; font-size:11.5px; display:block;}
     <!-- AUSGABEN -->
     <section class="tab-page hidden" id="tab-ausgaben">
       <div class="panel">
-        <h2>Ausgabe erfassen</h2>
+        <h2 id="expFormTitle">Ausgabe erfassen</h2>
         <div class="grid grid-3">
           <div class="field"><label>Datum</label><input id="aDatum" type="date"></div>
           <div class="field"><label>Kategorie</label>
@@ -352,7 +355,10 @@ table.pinv td .sub{color:#666; font-size:11.5px; display:block;}
           <label>Beleg(e) anhängen (Foto oder PDF)</label>
           <input type="file" id="aBelege" accept="image/*,application/pdf" multiple>
         </div>
-        <button class="btn" style="margin-top:16px;" id="saveExpenseBtn">Ausgabe speichern</button>
+        <div style="display:flex; gap:10px; margin-top:16px;">
+          <button class="btn" id="saveExpenseBtn">Ausgabe speichern</button>
+          <button class="btn secondary hidden" id="cancelEditExpenseBtn" type="button">Abbrechen</button>
+        </div>
       </div>
 
       <div class="panel">
@@ -878,9 +884,16 @@ table.pinv td .sub{color:#666; font-size:11.5px; display:block;}
     invItems = [{horse:'', leistung:'', preis:'', menge:1}];
   }
   resetInvoiceForm();
+  var editingInvoiceId = null;
 
-  function nextInvoiceNumber(){
-    return data.settings.invoiceYear + '-' + String(data.settings.nextSeq).padStart(3,'0');
+  function nextInvoiceNumber(dateStr){
+    var year = (dateStr || todayISO()).slice(0,4);
+    var maxSeq = 0;
+    data.invoices.forEach(function(inv){
+      var m = /^(\d{4})-(\d+)$/.exec(inv.number||'');
+      if(m && m[1]===year){ maxSeq = Math.max(maxSeq, parseInt(m[2],10)); }
+    });
+    return year + '-' + String(maxSeq+1).padStart(3,'0');
   }
 
   function renderInvoiceForm(){
@@ -888,14 +901,22 @@ table.pinv td .sub{color:#666; font-size:11.5px; display:block;}
     sel.innerHTML = '<option value="">— Kunde wählen —</option>' + data.customers.map(function(c){
       return '<option value="'+c.id+'">'+c.name+'</option>';
     }).join('');
-    document.getElementById('rDatum').value = todayISO();
-    document.getElementById('rNummer').value = nextInvoiceNumber();
-    document.getElementById('rKmRate').value = data.settings.kmRate;
-    document.getElementById('rStatus').value = 'offen';
-    document.getElementById('rBezahltAmWrap').classList.add('hidden');
+    if(!editingInvoiceId){
+      document.getElementById('rDatum').value = todayISO();
+      document.getElementById('rNummer').value = nextInvoiceNumber(todayISO());
+      document.getElementById('rKmRate').value = data.settings.kmRate;
+      document.getElementById('rStatus').value = 'offen';
+      document.getElementById('rBezahltAmWrap').classList.add('hidden');
+    }
     renderItemRows();
     updateInvoiceTotals();
   }
+
+  document.getElementById('rDatum').addEventListener('change', function(){
+    if(!editingInvoiceId){
+      document.getElementById('rNummer').value = nextInvoiceNumber(this.value);
+    }
+  });
 
   document.getElementById('rKunde').addEventListener('change', function(){
     var c = data.customers.find(function(c){return c.id===this.value;}, this);
@@ -1012,10 +1033,14 @@ table.pinv td .sub{color:#666; font-size:11.5px; display:block;}
     var anfahrtOn = document.getElementById('rAnfahrtActive').checked;
     var anfahrtBetrag = anfahrtOn ? (Number(document.getElementById('rAnfahrtBetrag').value)||0) : 0;
     var status = document.getElementById('rStatus').value;
+    var number = document.getElementById('rNummer').value.trim();
+    if(!number){ showToast('Bitte eine Rechnungsnummer angeben.'); return; }
 
-    var inv = {
-      id: uid(),
-      number: document.getElementById('rNummer').value,
+    var duplicate = data.invoices.some(function(i){ return i.number===number && i.id!==editingInvoiceId; });
+    if(duplicate){ showToast('Achtung: Rechnungsnummer '+number+' existiert bereits — trotzdem gespeichert.'); }
+
+    var common = {
+      number: number,
       customerId: custId,
       date: document.getElementById('rDatum').value || todayISO(),
       items: cleanItems,
@@ -1024,11 +1049,65 @@ table.pinv td .sub{color:#666; font-size:11.5px; display:block;}
       status: status,
       bezahltAm: status==='bezahlt' ? (document.getElementById('rBezahltAm').value||todayISO()) : null
     };
+
+    if(editingInvoiceId){
+      var existing = data.invoices.find(function(i){return i.id===editingInvoiceId;});
+      if(existing){
+        Object.assign(existing, common);
+        save();
+        showToast('Rechnung '+number+' aktualisiert.');
+      }
+      cancelEditInvoice();
+      renderInvoiceForm();
+      return;
+    }
+
+    var inv = Object.assign({id: uid()}, common);
     data.invoices.push(inv);
-    data.settings.nextSeq += 1;
     save();
     showToast('Rechnung '+inv.number+' gespeichert.');
     resetInvoiceForm();
+    renderInvoiceForm();
+  });
+
+  function startEditInvoice(id){
+    var inv = data.invoices.find(function(i){return i.id===id;});
+    if(!inv) return;
+    editingInvoiceId = id;
+    document.getElementById('invFormTitle').textContent = 'Rechnung bearbeiten: '+inv.number;
+    document.getElementById('rKunde').value = inv.customerId;
+    document.getElementById('rDatum').value = inv.date;
+    document.getElementById('rNummer').value = inv.number;
+    invItems = inv.items.map(function(it){ return {horse: it.horse==='—'?'':it.horse, leistung:it.leistung, preis:it.preis, menge:it.menge||1}; });
+    if(invItems.length===0) invItems = [{horse:'', leistung:'', preis:'', menge:1}];
+    document.getElementById('rKmDeduct').checked = !!inv.kmDeduction;
+    document.getElementById('rKm').value = inv.kmDeduction ? inv.kmDeduction.km : '';
+    document.getElementById('rKmRate').value = inv.kmDeduction ? inv.kmDeduction.rate : data.settings.kmRate;
+    document.getElementById('rAnfahrtActive').checked = !!(inv.anfahrt && inv.anfahrt.active);
+    document.getElementById('rAnfahrtBetrag').disabled = !(inv.anfahrt && inv.anfahrt.active);
+    document.getElementById('rAnfahrtBetrag').value = inv.anfahrt ? inv.anfahrt.betrag : '';
+    document.getElementById('rStatus').value = inv.status;
+    document.getElementById('rBezahltAmWrap').classList.toggle('hidden', inv.status!=='bezahlt');
+    document.getElementById('rBezahltAm').value = inv.bezahltAm || todayISO();
+    document.getElementById('saveInvoiceBtn').textContent = 'Änderungen speichern';
+    document.getElementById('cancelEditInvoiceBtn').classList.remove('hidden');
+
+    tabBtns.forEach(function(b){ b.classList.remove('active'); });
+    document.querySelector('.tab-btn[data-tab="rechnung-neu"]').classList.add('active');
+    document.querySelectorAll('.tab-page').forEach(function(p){ p.classList.add('hidden'); });
+    document.getElementById('tab-rechnung-neu').classList.remove('hidden');
+    renderInvoiceForm();
+  }
+
+  function cancelEditInvoice(){
+    editingInvoiceId = null;
+    document.getElementById('invFormTitle').textContent = 'Neue Rechnung';
+    document.getElementById('saveInvoiceBtn').textContent = 'Rechnung speichern';
+    document.getElementById('cancelEditInvoiceBtn').classList.add('hidden');
+    resetInvoiceForm();
+  }
+  document.getElementById('cancelEditInvoiceBtn').addEventListener('click', function(){
+    cancelEditInvoice();
     renderInvoiceForm();
   });
 
@@ -1044,6 +1123,7 @@ table.pinv td .sub{color:#666; font-size:11.5px; display:block;}
         '<td><span class="badge '+(i.status==='bezahlt'?'paid':'open')+'">'+(i.status==='bezahlt'?'Bezahlt':'Offen')+'</span></td>'+
         '<td class="right num">'+fmtEUR(invoiceTotal(i))+'</td>'+
         '<td style="white-space:nowrap;">'+
+          '<button class="btn ghost" data-editinv="'+i.id+'" type="button">Bearbeiten</button>'+
           '<button class="btn ghost" data-pdf="'+i.id+'" type="button">PDF herunterladen</button>'+
           '<button class="btn ghost" data-print="'+i.id+'" type="button">Drucken</button>'+
           '<button class="btn ghost" data-toggle="'+i.id+'" type="button">'+(i.status==='bezahlt'?'Als offen markieren':'Als bezahlt markieren')+'</button>'+
@@ -1051,6 +1131,9 @@ table.pinv td .sub{color:#666; font-size:11.5px; display:block;}
         '</td></tr>';
     }).join('');
 
+    tbody.querySelectorAll('[data-editinv]').forEach(function(b){
+      b.addEventListener('click', function(){ startEditInvoice(b.dataset.editinv); });
+    });
     tbody.querySelectorAll('[data-pdf]').forEach(function(b){
       b.addEventListener('click', function(){ downloadInvoicePdf(b.dataset.pdf); });
     });
@@ -1069,6 +1152,7 @@ table.pinv td .sub{color:#666; font-size:11.5px; display:block;}
       b.addEventListener('click', function(){
         if(!confirm('Rechnung wirklich löschen?')) return;
         data.invoices = data.invoices.filter(function(i){return i.id!==b.dataset.del;});
+        if(editingInvoiceId===b.dataset.del){ cancelEditInvoice(); renderInvoiceForm(); }
         save(); renderInvoiceList();
       });
     });
@@ -1221,14 +1305,19 @@ table.pinv td .sub{color:#666; font-size:11.5px; display:block;}
       return '<tr data-exprow="'+e.id+'"><td>'+fmtDateDE(e.date)+'</td><td>'+e.kategorie+'</td><td>'+(e.beschreibung||'')+'</td>'+
         '<td class="right num">'+fmtEUR(e.betrag)+'</td>'+
         '<td><button class="btn ghost small" data-receipts="'+e.id+'" type="button">📎 …</button></td>'+
-        '<td><button class="btn ghost" data-delexp="'+e.id+'" type="button">Löschen</button></td></tr>';
+        '<td style="white-space:nowrap;"><button class="btn ghost" data-editexp="'+e.id+'" type="button">Bearbeiten</button>'+
+        '<button class="btn ghost" data-delexp="'+e.id+'" type="button">Löschen</button></td></tr>';
     }).join('');
+    tbody.querySelectorAll('[data-editexp]').forEach(function(b){
+      b.addEventListener('click', function(){ startEditExpense(b.dataset.editexp); });
+    });
     tbody.querySelectorAll('[data-delexp]').forEach(function(b){
       b.addEventListener('click', function(){
         if(!confirm('Ausgabe wirklich löschen? Angehängte Belege werden mitgelöscht.')) return;
         var id = b.dataset.delexp;
         data.expenses = data.expenses.filter(function(e){return e.id!==id;});
         save();
+        if(editingExpenseId===id){ cancelEditExpense(); }
         getReceiptsForExpense(id).then(function(list){
           list.forEach(function(r){ deleteReceiptById(r.id); });
         });
@@ -1246,9 +1335,58 @@ table.pinv td .sub{color:#666; font-size:11.5px; display:block;}
     });
   }
 
+  var editingExpenseId = null;
+
+  function startEditExpense(id){
+    var e = data.expenses.find(function(x){return x.id===id;});
+    if(!e) return;
+    editingExpenseId = id;
+    document.getElementById('expFormTitle').textContent = 'Ausgabe bearbeiten';
+    document.getElementById('aDatum').value = e.date;
+    document.getElementById('aKategorie').value = e.kategorie;
+    document.getElementById('aBetrag').value = e.betrag;
+    document.getElementById('aBeschreibung').value = e.beschreibung||'';
+    document.getElementById('saveExpenseBtn').textContent = 'Änderungen speichern';
+    document.getElementById('cancelEditExpenseBtn').classList.remove('hidden');
+    document.getElementById('aDatum').scrollIntoView({behavior:'smooth', block:'center'});
+  }
+
+  function cancelEditExpense(){
+    editingExpenseId = null;
+    document.getElementById('expFormTitle').textContent = 'Ausgabe erfassen';
+    document.getElementById('aBetrag').value='';
+    document.getElementById('aBeschreibung').value='';
+    document.getElementById('aBelege').value='';
+    document.getElementById('saveExpenseBtn').textContent = 'Ausgabe speichern';
+    document.getElementById('cancelEditExpenseBtn').classList.add('hidden');
+  }
+  document.getElementById('cancelEditExpenseBtn').addEventListener('click', cancelEditExpense);
+
   document.getElementById('saveExpenseBtn').addEventListener('click', function(){
     var betrag = Number(document.getElementById('aBetrag').value);
     if(!betrag || betrag<=0){ showToast('Bitte einen gültigen Betrag angeben.'); return; }
+    var fileInput = document.getElementById('aBelege');
+    var files = fileInput.files ? Array.from(fileInput.files) : [];
+
+    if(editingExpenseId){
+      var existing = data.expenses.find(function(x){return x.id===editingExpenseId;});
+      if(existing){
+        existing.date = document.getElementById('aDatum').value || todayISO();
+        existing.kategorie = document.getElementById('aKategorie').value;
+        existing.beschreibung = document.getElementById('aBeschreibung').value.trim();
+        existing.betrag = betrag;
+        save();
+        var expId = existing.id;
+        Promise.all(files.map(function(f){ return saveReceiptFile(expId, f); }))
+          .then(function(){ renderExpenses(); })
+          .catch(function(){ showToast('Beleg konnte nicht gespeichert werden.'); });
+        showToast(files.length ? 'Ausgabe aktualisiert, '+files.length+' Beleg(e) hinzugefügt.' : 'Ausgabe aktualisiert.');
+      }
+      cancelEditExpense();
+      renderExpenses();
+      return;
+    }
+
     var newExpense = {
       id: uid(),
       date: document.getElementById('aDatum').value || todayISO(),
@@ -1259,8 +1397,6 @@ table.pinv td .sub{color:#666; font-size:11.5px; display:block;}
     data.expenses.push(newExpense);
     save();
 
-    var fileInput = document.getElementById('aBelege');
-    var files = fileInput.files ? Array.from(fileInput.files) : [];
     var savePromise = Promise.all(files.map(function(f){ return saveReceiptFile(newExpense.id, f); }));
 
     document.getElementById('aBetrag').value='';
